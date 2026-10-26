@@ -10,17 +10,17 @@ import {
 
 export function renderAdminLoginPage(mode = 'login', errorMsg = '') {
   return `
-    <main id="main-content" class="page-container" style="max-width:940px;padding-top:56px;">
-      <div class="card-panel" style="display:grid;grid-template-columns:1fr 1.15fr;gap:32px;align-items:stretch;">
+    <main id="main-content" class="page-container admin-login-container">
+      <div class="card-panel admin-login-card">
         <!-- Left Brand Panel (Matches Wireframe Page 12) -->
-        <div style="background:var(--pink-soft);border-radius:var(--radius-md);padding:28px;display:flex;flex-direction:column;justify-content:space-between;">
+        <div class="admin-login-brand-panel">
           <div>
             <img src="/images/logo.png" alt="Shop by SCHA" class="admin-login-logo" />
             <p style="font-size:18px;font-weight:600;color:var(--charcoal);margin:0 0 20px;">
               A quiet workspace<br/>for your growing shop.
             </p>
           </div>
-          <div style="background:rgba(255,255,255,0.65);border:1.5px dashed var(--pink-editorial);border-radius:var(--radius-sm);padding:24px;text-align:center;">
+          <div style="background:rgba(255,255,255,0.65);border:1.5px dashed var(--pink-editorial);border-radius:var(--radius-sm);padding:20px;text-align:center;">
             <strong style="font-size:12px;letter-spacing:0.08em;">PRIVATE ADMIN WORKSPACE</strong>
             <div style="font-size:11.5px;color:var(--text-muted);margin-top:4px;">
               Provisioned administrator access only · Server-enforced role guardrails
@@ -33,7 +33,7 @@ export function renderAdminLoginPage(mode = 'login', errorMsg = '') {
           <div style="margin-bottom:12px;">
             <span class="badge badge-ref">PRIVATE WORKSPACE</span>
           </div>
-          <h1 style="font-family:var(--font-display);font-size:28px;font-weight:800;margin:0 0 18px;">
+          <h1 style="font-family:var(--font-display);font-size:clamp(1.5rem,3vw,1.8rem);font-weight:800;margin:0 0 18px;">
             ${mode === 'forgot' ? 'Admin password recovery' : 'Admin login'}
           </h1>
 
@@ -77,9 +77,9 @@ export function renderAdminLoginPage(mode = 'login', errorMsg = '') {
               </button>
             </form>
 
-            <div style="display:flex;justify-content:space-between;align-items:center;padding-top:12px;border-top:1px solid var(--border-warm);font-size:12.5px;">
+            <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center;padding-top:12px;border-top:1px solid var(--border-warm);font-size:12.5px;">
               <a href="/" data-nav style="color:var(--text-muted);font-weight:600;">Back to storefront &gt;</a>
-              <div style="display:flex;gap:8px;align-items:center;">
+              <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
                 <span class="badge badge-draft">NO SIGN-UP</span>
                 <button type="button" class="nav-btn" data-action="fill-demo-admin" style="font-size:12px;color:var(--rose-deep);font-weight:700;">
                   Fill Provisioned Admin
@@ -109,19 +109,27 @@ export function renderAdminShell(activeModule, innerHtml) {
   return `
     <div class="admin-shell">
       <aside class="admin-sidebar" aria-label="Admin Workspace Navigation">
-        <div style="padding:4px 12px 14px;border-bottom:1px solid var(--border-warm);margin-bottom:8px;">
+        <div class="admin-sidebar-header">
           <a href="/admin" data-nav aria-label="Shop by SCHA Admin">
             <img src="/images/logo.png" alt="Shop by SCHA" class="admin-sidebar-logo" />
           </a>
+          <div class="admin-mobile-quick-actions">
+            <a href="/" data-nav class="admin-nav-item"><span>Store &gt;</span></a>
+            <button type="button" class="admin-nav-item" data-action="logout" style="border:none;background:none;color:var(--rose-deep);">
+              <span>Log out</span>
+            </button>
+          </div>
         </div>
 
-        ${navItems.map((it) => `
-          <a href="${it.href}" data-nav class="admin-nav-item ${activeModule === it.key ? 'active' : ''}">
-            <span>${escapeHtml(it.label)}</span>
-          </a>
-        `).join('')}
+        <nav class="admin-nav-links-list" aria-label="Admin Modules">
+          ${navItems.map((it) => `
+            <a href="${it.href}" data-nav class="admin-nav-item ${activeModule === it.key ? 'active' : ''}">
+              <span>${escapeHtml(it.label)}</span>
+            </a>
+          `).join('')}
+        </nav>
 
-        <div style="margin-top:auto;padding-top:16px;border-top:1px solid var(--border-warm);display:flex;flex-direction:column;gap:6px;">
+        <div class="admin-sidebar-footer">
           <a href="/" data-nav class="admin-nav-item"><span>View store &gt;</span></a>
           <button type="button" class="admin-nav-item" data-action="logout" style="border:none;background:none;width:100%;text-align:left;color:var(--rose-deep);">
             <span>Log out</span>
@@ -130,12 +138,12 @@ export function renderAdminShell(activeModule, innerHtml) {
       </aside>
 
       <main id="main-content" class="admin-main">
-        <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid var(--border-warm);">
-          <div style="display:flex;align-items:center;gap:10px;">
+        <div class="admin-topbar">
+          <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;">
             <span class="badge badge-ref">ADMIN: ${escapeHtml(state.user?.email || '')}</span>
             ${state.adminIncludeDemo ? `<span class="badge badge-demo">DEMO DATA INCLUDED</span>` : `<span class="badge badge-paid">LIVE CONFIRMED ONLY</span>`}
           </div>
-          <div style="display:flex;align-items:center;gap:12px;font-size:13px;">
+          <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;font-size:13px;">
             <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:600;">
               <input type="checkbox" id="admin-toggle-demo" ${state.adminIncludeDemo ? 'checked' : ''} />
               <span>Include explicit DEMO dataset</span>
@@ -168,12 +176,12 @@ export function renderAdminOverview(data) {
 
   const html = `
     <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;margin-bottom:20px;">
-      <h1 class="page-title" style="font-size:26px;">Store overview</h1>
-      <form id="admin-overview-date-form" style="display:flex;align-items:center;gap:8px;font-size:13px;">
+      <h1 class="page-title" style="font-size:clamp(1.4rem,2.6vw,1.7rem);">Store overview</h1>
+      <form id="admin-overview-date-form" class="admin-date-filter-form">
         <span>Date range:</span>
-        <input type="date" name="date_from" value="${escapeHtml(data.date_from)}" class="input-field" style="width:145px;padding:6px 10px;" />
+        <input type="date" name="date_from" value="${escapeHtml(data.date_from)}" class="input-field admin-date-input" />
         <span>to</span>
-        <input type="date" name="date_to" value="${escapeHtml(data.date_to)}" class="input-field" style="width:145px;padding:6px 10px;" />
+        <input type="date" name="date_to" value="${escapeHtml(data.date_to)}" class="input-field admin-date-input" />
         <button type="submit" class="btn-capsule-secondary" style="padding:7px 14px;">Filter</button>
       </form>
     </div>
@@ -805,22 +813,22 @@ export function renderAdminPaymentReviews(orders = [], selectedOrderId = null) {
 export function renderAdminOrdersList(orders = [], filters = {}) {
   const html = `
     <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;margin-bottom:20px;">
-      <h1 class="page-title" style="font-size:26px;">Orders (${orders.length})</h1>
-      <form id="admin-orders-filter-form" style="display:flex;flex-wrap:wrap;gap:8px;">
-        <input type="search" name="q" value="${escapeHtml(filters.q || '')}" class="input-field" placeholder="Search order ID, customer..." style="width:210px;" />
-        <select name="payment_status" class="select-field" style="width:170px;">
+      <h1 class="page-title" style="font-size:clamp(1.4rem,2.6vw,1.7rem);">Orders (${orders.length})</h1>
+      <form id="admin-orders-filter-form" class="admin-orders-filter-form">
+        <input type="search" name="q" value="${escapeHtml(filters.q || '')}" class="input-field admin-filter-search" placeholder="Search order ID, customer..." />
+        <select name="payment_status" class="select-field admin-filter-select">
           <option value="">All Payment States</option>
           ${['awaiting_payment', 'under_review', 'needs_resubmission', 'paid', 'refund_pending', 'partially_refunded', 'refunded', 'expired_cancelled'].map((s) => `
             <option value="${s}" ${filters.payment_status === s ? 'selected' : ''}>${s}</option>
           `).join('')}
         </select>
-        <select name="fulfilment_status" class="select-field" style="width:165px;">
+        <select name="fulfilment_status" class="select-field admin-filter-select">
           <option value="">All Fulfilment States</option>
           ${['unfulfilled', 'processing', 'shipped', 'delivered', 'cancelled'].map((s) => `
             <option value="${s}" ${filters.fulfilment_status === s ? 'selected' : ''}>${s}</option>
           `).join('')}
         </select>
-        <button type="submit" class="btn-capsule-secondary" style="padding:8px 16px;">Filter</button>
+        <button type="submit" class="btn-capsule-secondary admin-filter-btn">Filter</button>
       </form>
     </div>
 

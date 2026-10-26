@@ -434,23 +434,22 @@ export function renderShopOrCollectionPage({ mode = 'shop', categorySlug = '', q
             type="search"
             name="q"
             value="${escapeHtml(q)}"
-            class="input-field"
+            class="input-field shop-search-input"
             placeholder="Search products, brand or REF-ID..."
-            style="width:260px;"
             aria-label="Search products"
           />
-          <select name="sort" class="select-field" style="width:185px;" aria-label="Sort products">
+          <select name="sort" class="select-field shop-sort-select" aria-label="Sort products">
             <option value="featured" ${sort === 'featured' ? 'selected' : ''}>Sort: Featured (Ref Order)</option>
             <option value="title_asc" ${sort === 'title_asc' ? 'selected' : ''}>Sort: Title A–Z</option>
             <option value="price_asc" ${sort === 'price_asc' ? 'selected' : ''}>Sort: Price Low to High</option>
             <option value="price_desc" ${sort === 'price_desc' ? 'selected' : ''}>Sort: Price High to Low</option>
           </select>
-          <button type="submit" class="btn-capsule-secondary" style="padding:10px 18px;">Apply</button>
+          <button type="submit" class="btn-capsule-secondary shop-apply-btn">Apply</button>
         </form>
       </div>
 
       <div class="shop-layout">
-        <aside class="shop-sidebar" aria-label="Product Filters">
+        <aside class="shop-sidebar shop-filter-sidebar" aria-label="Product Filters">
           <div>
             <h2 class="filter-group-title">Category</h2>
             <button type="button" class="filter-btn ${!activeCat ? 'active' : ''}" data-filter-key="category" data-filter-val="">
@@ -756,12 +755,12 @@ export function renderCartPage() {
         <div class="checkout-grid">
           <div class="card-panel">
             ${cart.items.map((item) => `
-              <div style="display:grid;grid-template-columns:88px 1fr auto;gap:18px;align-items:center;padding-bottom:18px;margin-bottom:18px;border-bottom:1px solid var(--border-warm);">
-                <a href="/products/${encodeURIComponent(item.product_slug)}" data-nav style="background:#F7F5F2;border-radius:var(--radius-sm);height:88px;display:flex;align-items:center;justify-content:center;padding:8px;">
-                  <img src="${escapeHtml(item.image_path || '/images/08_jacquemus_pink_flap_handbag.png')}" alt="${escapeHtml(item.product_title)}" style="max-width:100%;max-height:100%;object-fit:contain;" />
+              <div class="cart-item-row">
+                <a href="/products/${encodeURIComponent(item.product_slug)}" data-nav class="cart-item-thumb">
+                  <img src="${escapeHtml(item.image_path || '/images/08_jacquemus_pink_flap_handbag.png')}" alt="${escapeHtml(item.product_title)}" />
                 </a>
-                <div>
-                  <div style="display:flex;gap:6px;align-items:center;margin-bottom:4px;">
+                <div class="cart-item-info">
+                  <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:4px;">
                     <strong style="font-size:15px;">${escapeHtml(item.product_title)}</strong>
                     ${item.product_is_demo || item.variant_is_demo ? `<span class="badge badge-demo">DEMO</span>` : ''}
                   </div>
@@ -771,7 +770,7 @@ export function renderCartPage() {
                   <p style="margin:0 0 10px;font-weight:700;color:var(--rose-deep);">
                     ${escapeHtml(item.unit_price_formatted)}
                   </p>
-                  <div style="display:flex;align-items:center;gap:12px;">
+                  <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;">
                     <div style="display:inline-flex;align-items:center;border:1px solid var(--border-warm);border-radius:var(--radius-pill);overflow:hidden;">
                       <button type="button" class="nav-btn" data-cart-qty="${item.cart_item_id}" data-delta="-1" style="padding:4px 12px;" aria-label="Decrease quantity">-</button>
                       <span style="padding:0 10px;font-weight:700;font-size:13px;">${item.quantity}</span>
@@ -782,7 +781,7 @@ export function renderCartPage() {
                     </button>
                   </div>
                 </div>
-                <div style="font-weight:800;font-size:15px;">
+                <div class="cart-item-total">
                   ${escapeHtml(item.line_total_formatted)}
                 </div>
               </div>
@@ -1221,15 +1220,15 @@ export function renderOrderConfirmationPage(order, guestToken = '') {
         <div class="card-panel">
           <h2 style="font-size:18px;font-weight:800;margin:0 0 14px;">Order items &amp; snapshots</h2>
           ${(order.items || []).map((it) => `
-            <div style="display:grid;grid-template-columns:68px 1fr auto;gap:14px;align-items:center;padding-bottom:12px;margin-bottom:12px;border-bottom:1px solid var(--border-warm);">
-              <img src="${escapeHtml(it.image_snapshot)}" alt="${escapeHtml(it.title_snapshot)}" style="width:68px;height:68px;object-fit:contain;background:#F7F5F2;border-radius:var(--radius-sm);padding:6px;" />
-              <div>
+            <div class="order-item-row">
+              <img src="${escapeHtml(it.image_snapshot)}" alt="${escapeHtml(it.title_snapshot)}" class="order-item-thumb" />
+              <div class="order-item-info">
                 <strong>${escapeHtml(it.title_snapshot)}</strong>
                 <div style="font-size:12.5px;color:var(--text-muted);">
                   ${escapeHtml(it.variant_title_snapshot)} · SKU: ${escapeHtml(it.sku_snapshot)} · Qty: ${it.quantity}
                 </div>
               </div>
-              <strong>${escapeHtml(it.line_total_formatted)}</strong>
+              <strong class="order-item-total">${escapeHtml(it.line_total_formatted)}</strong>
             </div>
           `).join('')}
 
@@ -1242,7 +1241,7 @@ export function renderOrderConfirmationPage(order, guestToken = '') {
                   <strong style="font-size:13.5px;">${escapeHtml(ev.title)}</strong>
                   <div style="font-size:12.5px;color:var(--text-muted);">${escapeHtml(ev.detail)}</div>
                 </div>
-                <span style="font-size:11.5px;color:var(--text-muted);white-space:nowrap;">${escapeHtml(formatKLDate(ev.created_at))}</span>
+                <span class="timeline-date" style="font-size:11.5px;color:var(--text-muted);">${escapeHtml(formatKLDate(ev.created_at))}</span>
               </div>
             `).join('')}
           </div>
@@ -1326,7 +1325,7 @@ export function renderCustomerAuthPage(mode = 'login') {
             </div>
             <button type="submit" class="btn-capsule-primary" style="width:100%;margin-bottom:14px;">Log in</button>
           </form>
-          <div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;padding-top:12px;border-top:1px solid var(--border-warm);">
+          <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;align-items:center;font-size:13px;padding-top:12px;border-top:1px solid var(--border-warm);">
             <a href="/register" data-nav style="color:var(--rose-deep);font-weight:700;">New customer? Create account</a>
             <button type="button" class="nav-btn" data-action="fill-demo-customer" style="font-size:12px;color:var(--text-muted);">
               Fill Demo Customer
@@ -1384,11 +1383,11 @@ export function renderCustomerAccountPage({ tab = 'orders', orders = [], address
     <main id="main-content" class="page-container">
       <div style="margin-bottom:24px;">
         <h1 class="page-title">My account</h1>
-        <p style="margin:4px 0 0;color:var(--text-muted);">Welcome, ${escapeHtml(u.name)} (${escapeHtml(u.email)})</p>
+        <p style="margin:4px 0 0;color:var(--text-muted);word-break:break-word;">Welcome, ${escapeHtml(u.name)} (${escapeHtml(u.email)})</p>
       </div>
 
       <div class="shop-layout">
-        <aside class="shop-sidebar" aria-label="Account Menu">
+        <aside class="shop-sidebar account-nav-sidebar" aria-label="Account Menu">
           <a href="/account/orders" data-nav class="filter-btn ${tab === 'orders' || tab === 'order-detail' ? 'active' : ''}">My orders</a>
           <a href="/account/addresses" data-nav class="filter-btn ${tab === 'addresses' ? 'active' : ''}">Addresses</a>
           <a href="/account/payment-info" data-nav class="filter-btn ${tab === 'payment-info' ? 'active' : ''}">Payment info</a>
@@ -1436,7 +1435,7 @@ export function renderCustomerAccountPage({ tab = 'orders', orders = [], address
               </div>
             `}
           ` : tab === 'order-detail' && selectedOrder ? `
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;align-items:center;margin-bottom:16px;">
               <h2 style="font-size:22px;font-weight:800;margin:0;">Order #${escapeHtml(selectedOrder.order_number)}</h2>
               <a href="/account/orders" data-nav style="font-size:13px;color:var(--rose-deep);font-weight:700;">&lt; Back to My orders</a>
             </div>
@@ -1459,13 +1458,13 @@ export function renderCustomerAccountPage({ tab = 'orders', orders = [], address
             ` : ''}
 
             ${(selectedOrder.items || []).map((it) => `
-              <div style="display:grid;grid-template-columns:68px 1fr auto;gap:14px;align-items:center;padding-bottom:12px;margin-bottom:12px;border-bottom:1px solid var(--border-warm);">
-                <img src="${escapeHtml(it.image_snapshot)}" alt="${escapeHtml(it.title_snapshot)}" style="width:68px;height:68px;object-fit:contain;background:#F7F5F2;border-radius:var(--radius-sm);padding:6px;" />
-                <div>
+              <div class="order-item-row">
+                <img src="${escapeHtml(it.image_snapshot)}" alt="${escapeHtml(it.title_snapshot)}" class="order-item-thumb" />
+                <div class="order-item-info">
                   <strong>${escapeHtml(it.title_snapshot)}</strong>
                   <div style="font-size:12.5px;color:var(--text-muted);">${escapeHtml(it.variant_title_snapshot)} · Qty: ${it.quantity}</div>
                 </div>
-                <strong>${escapeHtml(it.line_total_formatted)}</strong>
+                <strong class="order-item-total">${escapeHtml(it.line_total_formatted)}</strong>
               </div>
             `).join('')}
 

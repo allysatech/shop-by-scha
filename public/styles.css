@@ -1510,45 +1510,381 @@ button, input, select, textarea {
 }
 
 /* =========================================================================
-   RESPONSIVE BREAKPOINTS (1024px, 768px, 390px, 360px)
+   SHARED RESPONSIVE COMPONENT CLASSES (Cart, Orders, Shop, Admin)
    ========================================================================= */
-@media (max-width: 1080px) {
+.shop-search-input {
+  width: 260px;
+}
+.shop-sort-select {
+  width: 190px;
+}
+.shop-apply-btn {
+  padding: 10px 18px;
+}
+
+.cart-item-row {
+  display: grid;
+  grid-template-columns: 88px 1fr auto;
+  gap: 18px;
+  align-items: center;
+  padding-bottom: 18px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid var(--border-warm);
+}
+.cart-item-thumb {
+  background: #F7F5F2;
+  border-radius: var(--radius-sm);
+  height: 88px;
+  width: 88px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+}
+.cart-item-thumb img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+.cart-item-total {
+  font-weight: 800;
+  font-size: 15px;
+  text-align: right;
+}
+
+.order-item-row {
+  display: grid;
+  grid-template-columns: 68px 1fr auto;
+  gap: 14px;
+  align-items: center;
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--border-warm);
+}
+.order-item-thumb {
+  width: 68px;
+  height: 68px;
+  object-fit: contain;
+  background: #F7F5F2;
+  border-radius: var(--radius-sm);
+  padding: 6px;
+}
+.order-item-total {
+  font-weight: 800;
+  text-align: right;
+}
+
+.admin-login-container {
+  max-width: 940px;
+  padding-top: 56px;
+}
+.admin-login-card {
+  display: grid;
+  grid-template-columns: 1fr 1.15fr;
+  gap: 32px;
+  align-items: stretch;
+}
+.admin-login-brand-panel {
+  background: var(--pink-soft);
+  border-radius: var(--radius-md);
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.admin-sidebar-header {
+  padding: 4px 12px 14px;
+  border-bottom: 1px solid var(--border-warm);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.admin-mobile-quick-actions {
+  display: none;
+}
+.admin-nav-links-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.admin-sidebar-footer {
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-warm);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.admin-topbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border-warm);
+}
+
+.admin-date-filter-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+.admin-date-input {
+  width: 148px;
+  padding: 7px 10px;
+}
+
+.admin-orders-filter-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.admin-filter-search {
+  width: 220px;
+}
+.admin-filter-select {
+  width: 175px;
+}
+.admin-filter-btn {
+  padding: 8px 16px;
+}
+
+.table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.data-table {
+  min-width: 560px;
+}
+
+/* =========================================================================
+   RESPONSIVE BREAKPOINTS (1180px, 900px, 768px, 480px, 380px)
+   Consistent across Wide Desktop, Laptop, Tablet, Standard Phone & Mini Phone
+   ========================================================================= */
+
+/* 1. Laptop & Large Tablet (<= 1180px) */
+@media (max-width: 1180px) {
   .product-grid {
     grid-template-columns: repeat(3, 1fr);
+  }
+  .product-grid.cols-3 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .admin-kpi-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .payment-review-workspace {
+    grid-template-columns: 1fr 1fr;
+  }
+  .payment-review-workspace > :first-child {
+    grid-column: 1 / -1;
+  }
+  .editorial-story-section {
+    grid-template-columns: 1fr 1.15fr;
+    gap: 32px;
+  }
+  .footer-inner {
+    grid-template-columns: 1fr 1fr;
+    gap: 28px;
+  }
+}
+
+/* 2. Tablet & Portrait iPad (<= 900px) */
+@media (max-width: 900px) {
+  .header-inner {
+    padding: 14px 20px;
+  }
+  .hero-editorial {
+    padding: 24px 24px 36px;
+  }
+  .hero-stage {
+    min-height: 340px;
+  }
+  .hero-product-layer {
+    width: clamp(250px, 40vw, 380px);
+    height: clamp(250px, 40vw, 380px);
+  }
+  .editorial-story-section {
+    grid-template-columns: 1fr;
+    padding: 44px 24px 36px;
+    gap: 28px;
+  }
+  .editorial-copy-col {
+    max-width: 600px;
+  }
+  .editorial-lead, .editorial-body {
+    max-width: 100%;
+  }
+  .collections-pill-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+  .shop-layout {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .shop-filter-sidebar {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 14px;
+    align-items: start;
+  }
+  .shop-filter-sidebar > button[data-action="clear-shop-filters"] {
+    grid-column: 1 / -1;
+  }
+  .account-nav-sidebar {
+    flex-direction: row;
+    overflow-x: auto;
+    padding: 10px 12px;
+    gap: 8px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .account-nav-sidebar .filter-btn {
+    width: auto;
+    white-space: nowrap;
+    padding: 8px 14px;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--border-warm);
+  }
+  .product-grid,
+  .product-grid.cols-3 {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+  .pdp-grid,
+  .checkout-grid,
+  .payment-review-workspace {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  /* Tablet / Mobile Admin Shell */
+  .admin-shell {
+    grid-template-columns: 1fr;
+  }
+  .admin-sidebar {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    height: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--border-warm);
+    padding: 12px 16px;
+    gap: 10px;
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(10px);
+  }
+  .admin-sidebar-header {
+    padding: 0 0 8px;
+    margin-bottom: 0;
+  }
+  .admin-sidebar-logo {
+    height: 42px;
+  }
+  .admin-mobile-quick-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .admin-mobile-quick-actions .admin-nav-item {
+    padding: 6px 10px;
+    font-size: 12.5px;
+  }
+  .admin-nav-links-list {
+    flex-direction: row;
+    overflow-x: auto;
+    gap: 6px;
+    padding-bottom: 2px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .admin-nav-links-list .admin-nav-item {
+    white-space: nowrap;
+    padding: 8px 14px;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--border-warm);
+    font-size: 13px;
+  }
+  .admin-nav-links-list .admin-nav-item.active {
+    border-color: var(--pink-editorial);
+  }
+  .admin-sidebar-footer {
+    display: none;
+  }
+  .admin-main {
+    padding: 22px 20px 56px;
   }
   .admin-kpi-grid {
     grid-template-columns: repeat(2, 1fr);
   }
-  .payment-review-workspace {
+  .admin-login-container {
+    padding-top: 28px;
+  }
+  .admin-login-card {
     grid-template-columns: 1fr;
+    gap: 24px;
   }
 }
 
+/* 3. Mobile Phones & Phablets (<= 768px) */
 @media (max-width: 768px) {
+  /* Prevent iOS Safari zoom on input focus while keeping compact look */
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+
+  .preview-mode-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 10px 16px;
+    font-size: 12px;
+  }
+
   .header-inner {
-    padding: 12px 16px;
+    padding: 10px 14px;
   }
-  .nav-left-desktop, .nav-left-stacked {
-    display: none;
+  .brand-logo-img {
+    height: clamp(42px, 11vw, 52px);
   }
-  .mobile-menu-btn {
-    display: inline-flex;
+  .nav-right {
+    gap: 6px;
+  }
+  .header-icon-btn {
+    width: 38px;
+    height: 38px;
+  }
+  .header-cart-btn {
+    width: auto;
+    padding: 0 10px;
   }
 
   /* Mobile Hero Arrangement (H02 — Wireframe Page 5 Right) */
   .hero-editorial {
-    padding: 20px 16px 32px;
+    padding: 18px 16px 28px;
+  }
+  .chrome-accent-orb {
+    right: 6%;
+    top: 10%;
+    width: 38px;
+    height: 18px;
   }
   .hero-stage {
     min-height: auto;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
   }
   .hero-oversized-headline {
     white-space: normal;
-    font-size: clamp(2.1rem, 9.5vw, 3rem);
-    line-height: 1.05;
-    margin-bottom: 4px;
+    font-size: clamp(2.15rem, 9.8vw, 3.1rem);
+    line-height: 1.02;
+    margin-bottom: 2px;
   }
   .hero-product-layer {
     position: relative;
@@ -1556,19 +1892,24 @@ button, input, select, textarea {
     left: auto;
     transform: none !important;
     animation: none !important;
-    width: min(280px, 80vw);
-    height: 240px;
-    margin: -14px auto 8px;
+    width: min(290px, 82vw);
+    height: 230px;
+    margin: -10px auto 6px;
+  }
+  .hero-product-layer img {
+    width: 108%;
+    height: 108%;
   }
   .hero-bottom-bar {
-    margin-top: 6px;
+    margin-top: 4px;
     flex-direction: column;
     align-items: stretch;
     text-align: center;
-    gap: 14px;
+    gap: 12px;
   }
   .hero-brand-line {
     max-width: 100%;
+    font-size: 13.5px;
   }
   .btn-capsule-primary {
     width: 100%;
@@ -1576,67 +1917,267 @@ button, input, select, textarea {
 
   /* Mobile New Arrivals */
   .new-arrivals-section {
-    padding: 28px 16px 36px;
+    padding: 28px 16px 34px;
+  }
+  .new-arrivals-heading {
+    margin-bottom: 18px;
   }
   .new-arrivals-grid {
-    grid-template-columns: repeat(3, minmax(220px, 1fr));
+    grid-template-columns: repeat(3, minmax(235px, 78vw));
+    gap: 14px;
     overflow-x: auto;
-    padding-bottom: 8px;
+    padding-bottom: 10px;
     scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
   }
   .new-arrival-card {
     scroll-snap-align: start;
+    padding: 16px;
+  }
+  .new-arrival-media {
+    height: 180px;
   }
 
-  /* Mobile Editorial Collage */
+  /* Mobile Editorial Collage: E01 full-width top, E02 + E03 side-by-side */
   .editorial-story-section {
-    grid-template-columns: 1fr;
-    padding: 36px 16px;
-    gap: 24px;
+    padding: 32px 16px;
+    gap: 22px;
+  }
+  .editorial-decorative-word {
+    font-size: clamp(2.4rem, 11vw, 3.5rem);
   }
   .editorial-collage-stage {
     grid-template-columns: 1fr 1fr;
+    gap: 12px;
   }
-  .collage-card.slot-e01, .collage-card.slot-e02, .collage-card.slot-e03 {
+  .collage-card.slot-e01,
+  .collage-card.slot-e02,
+  .collage-card.slot-e03 {
     transform: none;
   }
+  .collage-card.slot-e01 {
+    grid-column: 1 / -1;
+  }
+  .collage-card.slot-e01 img {
+    aspect-ratio: 16 / 9;
+  }
 
-  /* Mobile 2-Column Grids */
+  /* Collections & Shop Grids */
+  .collections-home-section {
+    padding: 16px 16px 48px;
+  }
   .collections-pill-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 12px;
   }
-  .shop-layout {
-    grid-template-columns: 1fr;
+  .collection-entry-card {
+    padding: 12px;
+    gap: 10px;
   }
-  .product-grid {
+  .collection-entry-pill {
+    padding: 9px 10px;
+    font-size: 13px;
+  }
+
+  .page-container {
+    padding: 22px 16px 48px;
+  }
+  .shop-header-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+  }
+  .shop-controls-row {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 10px;
+  }
+  .shop-search-input {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+  .shop-sort-select {
+    width: 100%;
+  }
+
+  .product-grid,
+  .product-grid.cols-3 {
     grid-template-columns: repeat(2, 1fr);
     gap: 12px;
   }
-  .pdp-grid, .checkout-grid, .qr-payment-layout, .footer-inner, .form-grid-2, .form-grid-3 {
-    grid-template-columns: 1fr;
+  .product-card {
+    padding: 10px;
   }
-  .page-container {
-    padding: 24px 16px 48px;
+  .product-card-badges {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .badge {
+    font-size: 9.5px;
+    padding: 2px 7px;
+  }
+  .product-card-media {
+    padding: 8px;
+    margin-bottom: 8px;
+  }
+  .product-card-title {
+    font-size: 13px;
+  }
+  .product-card-price {
+    font-size: 13px;
+  }
+  .product-card-meta {
+    font-size: 11px;
   }
 
-  /* Mobile Admin Shell */
-  .admin-shell {
+  /* PDP, Checkout, QR, Forms, Footer */
+  .pdp-main-media {
+    padding: 18px;
+  }
+  .pdp-info-panel,
+  .card-panel {
+    padding: 20px 16px;
+    border-radius: var(--radius-md);
+  }
+  .qr-payment-layout,
+  .footer-inner,
+  .form-grid-2,
+  .form-grid-3 {
     grid-template-columns: 1fr;
+    gap: 16px;
   }
-  .admin-sidebar {
-    position: static;
-    height: auto;
-    flex-direction: row;
-    flex-wrap: wrap;
-    border-right: none;
-    border-bottom: 1px solid var(--border-warm);
-    padding: 12px;
+  .qr-slot-frame {
+    max-width: 260px;
+    margin: 0 auto;
+    width: 100%;
   }
+
+  /* Admin Mobile Adjustments */
   .admin-main {
-    padding: 20px 14px 48px;
+    padding: 18px 14px 48px;
   }
-  .admin-kpi-grid {
-    grid-template-columns: 1fr 1fr;
+  .admin-date-filter-form,
+  .admin-orders-filter-form {
+    width: 100%;
+  }
+  .admin-date-input {
+    flex: 1 1 130px;
+    width: auto;
+  }
+  .admin-filter-search,
+  .admin-filter-select,
+  .admin-filter-btn {
+    width: 100%;
+  }
+
+  #toast-region {
+    left: 16px;
+    right: 16px;
+    bottom: 16px;
+    max-width: none;
   }
 }
+
+/* 4. Compact Smartphones (<= 480px) */
+@media (max-width: 480px) {
+  .announcement-bar {
+    font-size: 10.5px;
+    padding: 7px 12px;
+  }
+  .header-inner {
+    padding: 10px 10px;
+  }
+  .brand-logo-img {
+    height: 40px;
+  }
+  .header-icon-btn {
+    width: 34px;
+    height: 34px;
+  }
+  .header-icon-btn svg {
+    width: 19px;
+    height: 19px;
+  }
+  .header-cart-btn {
+    width: auto;
+    padding: 0 8px;
+    gap: 4px;
+  }
+  .bag-pill-count {
+    min-width: 18px;
+    height: 18px;
+    font-size: 10px;
+  }
+
+  .shop-filter-sidebar {
+    grid-template-columns: 1fr 1fr;
+    padding: 14px;
+    gap: 12px;
+  }
+
+  /* Cart & Order Item Rows stack price neatly on narrow screens */
+  .cart-item-row {
+    grid-template-columns: 72px 1fr;
+    gap: 12px;
+  }
+  .cart-item-thumb {
+    width: 72px;
+    height: 72px;
+  }
+  .cart-item-total {
+    grid-column: 2;
+    text-align: left;
+    margin-top: -4px;
+  }
+
+  .order-item-row {
+    grid-template-columns: 56px 1fr;
+    gap: 10px;
+  }
+  .order-item-thumb {
+    width: 56px;
+    height: 56px;
+  }
+  .order-item-total {
+    grid-column: 2;
+    text-align: left;
+  }
+
+  .timeline-row {
+    grid-template-columns: 16px 1fr;
+    gap: 8px;
+  }
+  .timeline-date {
+    grid-column: 2;
+    white-space: normal !important;
+  }
+
+  .admin-kpi-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .kpi-card {
+    padding: 12px;
+  }
+  .kpi-value {
+    font-size: 20px;
+  }
+}
+
+/* 5. Ultra-Compact Phones (<= 360px) */
+@media (max-width: 360px) {
+  .collections-pill-grid,
+  .product-grid,
+  .product-grid.cols-3,
+  .admin-kpi-grid,
+  .shop-filter-sidebar {
+    grid-template-columns: 1fr;
+  }
+  .brand-logo-img {
+    height: 34px;
+  }
+}
+
