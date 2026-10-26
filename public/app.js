@@ -167,12 +167,12 @@ function openMobileMenuDrawer() {
             </svg>
             <span>Search Catalogue</span>
           </a>
-          <a href="${state.user ? '/account' : '/login'}" data-nav class="side-nav-quicklink">
+          <a href="${state.user ? (state.user.role === 'ADMIN' ? '/admin' : '/account') : '/login'}" data-nav class="side-nav-quicklink">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
               <circle cx="12" cy="7" r="4"></circle>
             </svg>
-            <span>${state.user ? 'My Account' : 'Customer Log in / Register'}</span>
+            <span>${state.user ? (state.user.role === 'ADMIN' ? 'Admin Overview' : 'My Account') : 'Customer Log in / Register'}</span>
           </a>
           <a href="/cart" data-nav class="side-nav-quicklink">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -450,6 +450,9 @@ export async function renderRoute() {
   }
 
   if (pathname === '/login') {
+    if (state.user) {
+      return navigateTo(state.user.role === 'ADMIN' ? '/admin' : '/account', true);
+    }
     appEl.innerHTML = renderCustomerAuthPage('login');
     return;
   }
@@ -467,6 +470,9 @@ export async function renderRoute() {
   if (pathname === '/account' || pathname.startsWith('/account/')) {
     if (!state.user) {
       return navigateTo('/login', true);
+    }
+    if (state.user.role === 'ADMIN') {
+      return navigateTo('/admin', true);
     }
     try {
       const [ordersData, addrData] = await Promise.all([
@@ -1038,10 +1044,21 @@ document.addEventListener('submit', async (e) => {
     e.preventDefault();
     const fd = new FormData(form);
     try {
-      await apiFetch('/api/auth/login', {
+      const res = await apiFetch('/api/auth/login', {
         method: 'POST',
         body: { email: fd.get('email'), password: fd.get('password') }
       });
+      if (res.user) {
+        state.user = res.user;
+      }
+      if (res.csrfToken) {
+        state.csrfToken = res.csrfToken;
+      }
+      if (res.user && res.user.role === 'ADMIN') {
+        showToast('Logged in to Shop by SCHA Admin Workspace.');
+        await navigateTo('/admin');
+        return;
+      }
       showToast('Welcome back to Shop by SCHA.');
       const redir = new URLSearchParams(window.location.search).get('redirect') || '/account';
       await navigateTo(redir);
@@ -1201,6 +1218,12 @@ document.addEventListener('submit', async (e) => {
         if (mfaGroup) mfaGroup.style.display = 'flex';
         showToast(res.message);
         return;
+      }
+      if (res.user) {
+        state.user = res.user;
+      }
+      if (res.csrfToken) {
+        state.csrfToken = res.csrfToken;
       }
       showToast('Logged in to Shop by SCHA Admin Workspace.');
       await navigateTo('/admin');
