@@ -1,0 +1,24 @@
+{
+  "name": "shop-by-scha",
+  "version": "1.3.0",
+  "private": true,
+  "type": "commonjs",
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "scripts": {
+    "build": "node server/build.js",
+    "dev": "node server/index.js",
+    "start": "node server/index.js",
+    "seed": "node server/seed.js",
+    "test:verify": "node server/verify.js"
+  },
+  "dependencies": {
+    "@neon/config": "^1.9.4",
+    "@neon/env": "^1.6.5",
+    "@vercel/functions": "^3.10.3",
+    "express": "^4.21.2",
+    "pg": "^8.23.1",
+    "resend": "^6.34.1"
+  }
+}

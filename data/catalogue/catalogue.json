@@ -1,0 +1,510 @@
+{
+  "store": "Shop by SCHA",
+  "version": "1.0",
+  "prepared_date": "2026-10-26",
+  "status": "draft catalogue for website handoff; not a live inventory",
+  "categories": [
+    "Eyewear",
+    "Bags",
+    "Beauty",
+    "Footwear"
+  ],
+  "reference_count": 12,
+  "rules": [
+    "All 12 user references are preserved in the supplied order. Reference count is not a confirmed unique-product count.",
+    "Brand grouping comes from the user. Titles are descriptive working names; exact models and variants remain unconfirmed.",
+    "Price and stock are null, not zero. Do not enable purchase or publish to a live shop until completed.",
+    "Review references 05 and 06 for duplication. If identical, keep one sellable product with both images in its gallery.",
+    "Do not infer included accessories, multi-item sets, authenticity claims or brand affiliation from photographs.",
+    "Original image bytes are unchanged. document_preview_bounds only describes PDF layout; it does not alter the original asset."
+  ],
+  "products": [
+    {
+      "reference_id": "REF-01",
+      "reference_order": 1,
+      "record_type": "draft_product_reference",
+      "title": "Gentle Monster Black Optical Frame",
+      "brand": "Gentle Monster",
+      "category": "Eyewear",
+      "slug": "gentle-monster-black-optical-frame",
+      "source_filename": "image(6).png",
+      "source_library_file_id": "libfile_e111eefee3248191a22572c36dd4762d",
+      "images": [
+        {
+          "path": "images/01_gentle_monster_black_optical_frame.png",
+          "alt": "Gentle Monster Black Optical Frame - supplied reference 1",
+          "width": 2048,
+          "height": 2048,
+          "sha256": "9a0a06fa2cd20a1183b030236c7b7568ffc9fe053074e5c301db10cf138b67dd",
+          "document_preview_bounds": [
+            475,
+            885,
+            1578,
+            1396
+          ]
+        }
+      ],
+      "price_minor": null,
+      "currency": "MYR",
+      "stock_quantity": null,
+      "model": null,
+      "sellable_sku": null,
+      "confirmed_variants": [],
+      "reference_colour_description": "Black",
+      "publish_status": "draft",
+      "purchase_enabled": false,
+      "duplicate_review_required": false,
+      "related_reference_ids": [],
+      "pending_confirmation": [
+        "price",
+        "stock",
+        "exact model / range",
+        "sellable SKU and variants"
+      ],
+      "notes": "Exact model, frame size and lens configuration to confirm."
+    },
+    {
+      "reference_id": "REF-02",
+      "reference_order": 2,
+      "record_type": "draft_product_reference",
+      "title": "Gentle Monster Black Cat-eye Eyewear",
+      "brand": "Gentle Monster",
+      "category": "Eyewear",
+      "slug": "gentle-monster-black-cat-eye-eyewear",
+      "source_filename": "image(7).png",
+      "source_library_file_id": "libfile_ee83ba194b8c8191a41fec5dac614c64",
+      "images": [
+        {
+          "path": "images/02_gentle_monster_black_cat_eye_eyewear.png",
+          "alt": "Gentle Monster Black Cat-eye Eyewear - supplied reference 2",
+          "width": 1080,
+          "height": 1080,
+          "sha256": "0e4650d7abe00a15affb40c14a3bfda94863f3b18dd1607a52accff36266a87e",
+          "document_preview_bounds": null
+        }
+      ],
+      "price_minor": null,
+      "currency": "MYR",
+      "stock_quantity": null,
+      "model": null,
+      "sellable_sku": null,
+      "confirmed_variants": [],
+      "reference_colour_description": "Black",
+      "publish_status": "draft",
+      "purchase_enabled": false,
+      "duplicate_review_required": false,
+      "related_reference_ids": [],
+      "pending_confirmation": [
+        "price",
+        "stock",
+        "exact model / range",
+        "sellable SKU and variants"
+      ],
+      "notes": "Lifestyle reference. Exact model, lens and included accessories to confirm."
+    },
+    {
+      "reference_id": "REF-03",
+      "reference_order": 3,
+      "record_type": "draft_product_reference",
+      "title": "Gentle Monster Silver Rectangular Frame",
+      "brand": "Gentle Monster",
+      "category": "Eyewear",
+      "slug": "gentle-monster-silver-rectangular-frame",
+      "source_filename": "image(8).png",
+      "source_library_file_id": "libfile_de8854f6b46881918df99cea9d3e0e94",
+      "images": [
+        {
+          "path": "images/03_gentle_monster_silver_rectangular_frame.png",
+          "alt": "Gentle Monster Silver Rectangular Frame - supplied reference 3",
+          "width": 2048,
+          "height": 2048,
+          "sha256": "b8880786b0a8950112065e290acb7755fe3c038f8c3cc91e075965b6812aa72b",
+          "document_preview_bounds": [
+            466,
+            927,
+            1597,
+            1389
+          ]
+        }
+      ],
+      "price_minor": null,
+      "currency": "MYR",
+      "stock_quantity": null,
+      "model": null,
+      "sellable_sku": null,
+      "confirmed_variants": [],
+      "reference_colour_description": "Silver",
+      "publish_status": "draft",
+      "purchase_enabled": false,
+      "duplicate_review_required": false,
+      "related_reference_ids": [],
+      "pending_confirmation": [
+        "price",
+        "stock",
+        "exact model / range",
+        "sellable SKU and variants"
+      ],
+      "notes": "Exact model, frame size and lens configuration to confirm."
+    },
+    {
+      "reference_id": "REF-04",
+      "reference_order": 4,
+      "record_type": "draft_product_reference",
+      "title": "Gentle Monster Silver Sculptural Frame",
+      "brand": "Gentle Monster",
+      "category": "Eyewear",
+      "slug": "gentle-monster-silver-sculptural-frame",
+      "source_filename": "image(9).png",
+      "source_library_file_id": "libfile_7dbfe52546e481918c7a847b20fd9621",
+      "images": [
+        {
+          "path": "images/04_gentle_monster_silver_sculptural_frame.png",
+          "alt": "Gentle Monster Silver Sculptural Frame - supplied reference 4",
+          "width": 1080,
+          "height": 1350,
+          "sha256": "4d7b7c11fb22160272922f6f4e7a26b17c9f67e84f707a7bf1e26afde5ca7f32",
+          "document_preview_bounds": null
+        }
+      ],
+      "price_minor": null,
+      "currency": "MYR",
+      "stock_quantity": null,
+      "model": null,
+      "sellable_sku": null,
+      "confirmed_variants": [],
+      "reference_colour_description": "Silver",
+      "publish_status": "draft",
+      "purchase_enabled": false,
+      "duplicate_review_required": false,
+      "related_reference_ids": [],
+      "pending_confirmation": [
+        "price",
+        "stock",
+        "exact model / range",
+        "sellable SKU and variants"
+      ],
+      "notes": "Exact model, frame size and lens configuration to confirm."
+    },
+    {
+      "reference_id": "REF-05",
+      "reference_order": 5,
+      "record_type": "draft_product_reference",
+      "title": "Jacquemus Pink Mini Bag - Lifestyle Reference",
+      "brand": "Jacquemus",
+      "category": "Bags",
+      "slug": "jacquemus-pink-mini-bag-lifestyle",
+      "source_filename": "image(10).png",
+      "source_library_file_id": "libfile_12f4532c02188191bc6e66cffe4cd633",
+      "images": [
+        {
+          "path": "images/05_jacquemus_pink_mini_bag_lifestyle.png",
+          "alt": "Jacquemus Pink Mini Bag - Lifestyle Reference - supplied reference 5",
+          "width": 1094,
+          "height": 1237,
+          "sha256": "4ee9d8beff0f95d1b61ba8d9d2af41552da6517f397551f68136f38e4748137a",
+          "document_preview_bounds": null
+        }
+      ],
+      "price_minor": null,
+      "currency": "MYR",
+      "stock_quantity": null,
+      "model": null,
+      "sellable_sku": null,
+      "confirmed_variants": [],
+      "reference_colour_description": "Pink",
+      "publish_status": "draft",
+      "purchase_enabled": false,
+      "duplicate_review_required": true,
+      "related_reference_ids": [
+        "REF-06"
+      ],
+      "pending_confirmation": [
+        "price",
+        "stock",
+        "exact model / range",
+        "sellable SKU and variants"
+      ],
+      "notes": "May show the same bag as reference 06. Confirm model and dimensions before creating distinct sellable products."
+    },
+    {
+      "reference_id": "REF-06",
+      "reference_order": 6,
+      "record_type": "draft_product_reference",
+      "title": "Jacquemus Pink Top-handle Bag - Product Reference",
+      "brand": "Jacquemus",
+      "category": "Bags",
+      "slug": "jacquemus-pink-top-handle-bag",
+      "source_filename": "image(20261026-052402).png",
+      "source_library_file_id": "libfile_03569058f1388191aa47af5487fc2682",
+      "images": [
+        {
+          "path": "images/06_jacquemus_pink_top_handle_bag.png",
+          "alt": "Jacquemus Pink Top-handle Bag - Product Reference - supplied reference 6",
+          "width": 1000,
+          "height": 1334,
+          "sha256": "495a3f9135858ab95a279e4cff9bf9bfdda102e92aba79c9a1bda3c156f80c65",
+          "document_preview_bounds": null
+        }
+      ],
+      "price_minor": null,
+      "currency": "MYR",
+      "stock_quantity": null,
+      "model": null,
+      "sellable_sku": null,
+      "confirmed_variants": [],
+      "reference_colour_description": "Pink",
+      "publish_status": "draft",
+      "purchase_enabled": false,
+      "duplicate_review_required": true,
+      "related_reference_ids": [
+        "REF-05"
+      ],
+      "pending_confirmation": [
+        "price",
+        "stock",
+        "exact model / range",
+        "sellable SKU and variants"
+      ],
+      "notes": "May show the same bag as reference 05. Confirm model and dimensions; combine in one gallery if it is the same item."
+    },
+    {
+      "reference_id": "REF-07",
+      "reference_order": 7,
+      "record_type": "draft_product_reference",
+      "title": "Jacquemus Red Handbag",
+      "brand": "Jacquemus",
+      "category": "Bags",
+      "slug": "jacquemus-red-handbag",
+      "source_filename": "image(20261026-052417).png",
+      "source_library_file_id": "libfile_1bb8213a35b881919f6dac49caa2745e",
+      "images": [
+        {
+          "path": "images/07_jacquemus_red_handbag.png",
+          "alt": "Jacquemus Red Handbag - supplied reference 7",
+          "width": 399,
+          "height": 501,
+          "sha256": "e61db5f75b16274b8b79e22e8f84f90be1bccf5e25aa38d5f694ebf2dedaef13",
+          "document_preview_bounds": null
+        }
+      ],
+      "price_minor": null,
+      "currency": "MYR",
+      "stock_quantity": null,
+      "model": null,
+      "sellable_sku": null,
+      "confirmed_variants": [],
+      "reference_colour_description": "Red",
+      "publish_status": "draft",
+      "purchase_enabled": false,
+      "duplicate_review_required": false,
+      "related_reference_ids": [],
+      "pending_confirmation": [
+        "price",
+        "stock",
+        "exact model / range",
+        "sellable SKU and variants"
+      ],
+      "notes": "Exact model, dimensions, material and configuration to confirm."
+    },
+    {
+      "reference_id": "REF-08",
+      "reference_order": 8,
+      "record_type": "draft_product_reference",
+      "title": "Jacquemus Pink Flap Handbag",
+      "brand": "Jacquemus",
+      "category": "Bags",
+      "slug": "jacquemus-pink-flap-handbag",
+      "source_filename": "image(20261026-052456).png",
+      "source_library_file_id": "libfile_c4b09cbcbd64819198babf9bd0e1634f",
+      "images": [
+        {
+          "path": "images/08_jacquemus_pink_flap_handbag.png",
+          "alt": "Jacquemus Pink Flap Handbag - supplied reference 8",
+          "width": 1296,
+          "height": 1296,
+          "sha256": "6c5c13bf7c3942db2b2476663dbd01d09231a42576853ac938ff9a5e31af4aef",
+          "document_preview_bounds": [
+            268,
+            378,
+            1029,
+            954
+          ]
+        }
+      ],
+      "price_minor": null,
+      "currency": "MYR",
+      "stock_quantity": null,
+      "model": null,
+      "sellable_sku": null,
+      "confirmed_variants": [],
+      "reference_colour_description": "Pink",
+      "publish_status": "draft",
+      "purchase_enabled": false,
+      "duplicate_review_required": false,
+      "related_reference_ids": [],
+      "pending_confirmation": [
+        "price",
+        "stock",
+        "exact model / range",
+        "sellable SKU and variants"
+      ],
+      "notes": "Exact model, dimensions, material and configuration to confirm."
+    },
+    {
+      "reference_id": "REF-09",
+      "reference_order": 9,
+      "record_type": "draft_product_reference",
+      "title": "Charlotte Tilbury Lipstick",
+      "brand": "Charlotte Tilbury",
+      "category": "Beauty",
+      "slug": "charlotte-tilbury-lipstick",
+      "source_filename": "image(20261026-052643).png",
+      "source_library_file_id": "libfile_9adada4862a481919be04ef8554b5dec",
+      "images": [
+        {
+          "path": "images/09_charlotte_tilbury_lipstick.png",
+          "alt": "Charlotte Tilbury Lipstick - supplied reference 9",
+          "width": 800,
+          "height": 800,
+          "sha256": "a065b5673d6b15127f77b943eb94bb5510559533ccb4e991b93b596e8c2d9a12",
+          "document_preview_bounds": null
+        }
+      ],
+      "price_minor": null,
+      "currency": "MYR",
+      "stock_quantity": null,
+      "model": null,
+      "sellable_sku": null,
+      "confirmed_variants": [],
+      "reference_colour_description": null,
+      "publish_status": "draft",
+      "purchase_enabled": false,
+      "duplicate_review_required": false,
+      "related_reference_ids": [],
+      "pending_confirmation": [
+        "price",
+        "stock",
+        "exact model / range",
+        "sellable SKU and variants"
+      ],
+      "notes": "Reference shows multiple shades and lip pencils. Confirm lipstick range, sellable shade, size and whether any pencil is included; do not assume a bundle."
+    },
+    {
+      "reference_id": "REF-10",
+      "reference_order": 10,
+      "record_type": "draft_product_reference",
+      "title": "Charlotte Tilbury Airbrush Flawless Finish Powder",
+      "brand": "Charlotte Tilbury",
+      "category": "Beauty",
+      "slug": "charlotte-tilbury-airbrush-flawless-finish-powder",
+      "source_filename": "image(20261026-052731).png",
+      "source_library_file_id": "libfile_cb767b6884a481919b8ad3087333ae32",
+      "images": [
+        {
+          "path": "images/10_charlotte_tilbury_airbrush_flawless_finish_powder.png",
+          "alt": "Charlotte Tilbury Airbrush Flawless Finish Powder - supplied reference 10",
+          "width": 447,
+          "height": 447,
+          "sha256": "a482988070b70ff82253757bc8740ceff45d6ee571cdc2266d9ecb070ed258bd",
+          "document_preview_bounds": null
+        }
+      ],
+      "price_minor": null,
+      "currency": "MYR",
+      "stock_quantity": null,
+      "model": null,
+      "sellable_sku": null,
+      "confirmed_variants": [],
+      "reference_colour_description": null,
+      "publish_status": "draft",
+      "purchase_enabled": false,
+      "duplicate_review_required": false,
+      "related_reference_ids": [],
+      "pending_confirmation": [
+        "price",
+        "stock",
+        "exact model / range",
+        "sellable SKU and variants"
+      ],
+      "notes": "Range text is visible on the supplied packaging. Shade, size and sellable SKU to confirm."
+    },
+    {
+      "reference_id": "REF-11",
+      "reference_order": 11,
+      "record_type": "draft_product_reference",
+      "title": "Charlotte Tilbury Airbrush Flawless Foundation",
+      "brand": "Charlotte Tilbury",
+      "category": "Beauty",
+      "slug": "charlotte-tilbury-airbrush-flawless-foundation",
+      "source_filename": "image(20261026-052815).png",
+      "source_library_file_id": "libfile_a52bdfce51508191b9264f53f7518116",
+      "images": [
+        {
+          "path": "images/11_charlotte_tilbury_airbrush_flawless_foundation.png",
+          "alt": "Charlotte Tilbury Airbrush Flawless Foundation - supplied reference 11",
+          "width": 512,
+          "height": 512,
+          "sha256": "e205f28f2fcda6d034b5d8d441e35f876250f6b84f2564f8892551d2b1b133d4",
+          "document_preview_bounds": null
+        }
+      ],
+      "price_minor": null,
+      "currency": "MYR",
+      "stock_quantity": null,
+      "model": null,
+      "sellable_sku": null,
+      "confirmed_variants": [],
+      "reference_colour_description": null,
+      "publish_status": "draft",
+      "purchase_enabled": false,
+      "duplicate_review_required": false,
+      "related_reference_ids": [],
+      "pending_confirmation": [
+        "price",
+        "stock",
+        "exact model / range",
+        "sellable SKU and variants"
+      ],
+      "notes": "Reference shows several bottles/shades. Confirm shade, volume and selling unit; do not assume a multi-bottle set."
+    },
+    {
+      "reference_id": "REF-12",
+      "reference_order": 12,
+      "record_type": "draft_product_reference",
+      "title": "Onitsuka Tiger Pink Sneakers",
+      "brand": "Onitsuka Tiger",
+      "category": "Footwear",
+      "slug": "onitsuka-tiger-pink-sneakers",
+      "source_filename": "image(20261026-052930).png",
+      "source_library_file_id": "libfile_1a3974c095c88191882101db499e7c7d",
+      "images": [
+        {
+          "path": "images/12_onitsuka_tiger_pink_sneakers.png",
+          "alt": "Onitsuka Tiger Pink Sneakers - supplied reference 12",
+          "width": 495,
+          "height": 619,
+          "sha256": "40e0b9594fbf970e86dcc06c5b70ef6771e0c77ea63a8c72181b6f265bac7f63",
+          "document_preview_bounds": null
+        }
+      ],
+      "price_minor": null,
+      "currency": "MYR",
+      "stock_quantity": null,
+      "model": null,
+      "sellable_sku": null,
+      "confirmed_variants": [],
+      "reference_colour_description": "Pink",
+      "publish_status": "draft",
+      "purchase_enabled": false,
+      "duplicate_review_required": false,
+      "related_reference_ids": [],
+      "pending_confirmation": [
+        "price",
+        "stock",
+        "exact model / range",
+        "sellable SKU and variants"
+      ],
+      "notes": "Exact model, official colourway, sizes and size system to confirm. Do not infer a model code from the photo."
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+node_modules/
+.env
+.env.local
+.env.*.local
+.neon
+.vercel/
+data/*.sqlite
+data/*.sqlite-shm
+data/*.sqlite-wal
+storage/private_receipts/*.png
+storage/private_receipts/*.jpg
+storage/private_receipts/*.pdf

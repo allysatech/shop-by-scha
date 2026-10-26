@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/index.js"
+    },
+    {
+      "source": "/((?!api/|images/|assets/|uploads/|styles\\.css|app\\.js|state\\.js|storefront-views\\.js|admin-views\\.js).*)",
+      "destination": "/index.html"
+    }
+  ]
+}
