@@ -105,21 +105,23 @@ export function renderStorefrontFooter() {
   return `
     <footer class="site-footer">
       <div class="footer-inner">
-        <div>
-          <a href="/" data-nav class="brand-wordmark" style="align-items:flex-start;margin-bottom:12px;">
+        <div class="footer-col footer-brand-col">
+          <a href="/" data-nav class="brand-wordmark footer-brand-link">
             <img src="/images/logo.png" alt="Shop by SCHA" class="footer-logo-img" />
           </a>
-          <p style="font-size:13.5px;color:var(--text-muted);max-width:300px;margin:0 0 14px;">
-            ${escapeHtml(b01.footer_tagline || 'Playful editorial curation across eyewear, bags, beauty and footwear.')}
-          </p>
-          <p style="font-size:12px;color:var(--text-muted);margin:0;">
-            Currency: MYR (RM) · Reporting time: Asia/Kuala_Lumpur
-          </p>
+          <div class="footer-brand-meta">
+            <p class="footer-tagline">
+              ${escapeHtml(b01.footer_tagline || 'Playful editorial curation across eyewear, bags, beauty and footwear.')}
+            </p>
+            <p class="footer-currency-note">
+              Currency: MYR (RM) · Reporting time: Asia/Kuala_Lumpur
+            </p>
+          </div>
         </div>
 
-        <div>
+        <div class="footer-col footer-links-col">
           <h3 class="filter-group-title">Collections</h3>
-          <div style="display:flex;flex-direction:column;gap:8px;font-size:13.5px;">
+          <div class="footer-links-list">
             <a href="/shop" data-nav class="nav-link">Shop All References</a>
             <a href="/collections/eyewear" data-nav class="nav-link">Eyewear</a>
             <a href="/collections/bags" data-nav class="nav-link">Bags</a>
@@ -128,9 +130,9 @@ export function renderStorefrontFooter() {
           </div>
         </div>
 
-        <div>
+        <div class="footer-col footer-links-col">
           <h3 class="filter-group-title">Support &amp; Policies</h3>
-          <div style="display:flex;flex-direction:column;gap:8px;font-size:13.5px;">
+          <div class="footer-links-list">
             <a href="/help/faq" data-nav class="nav-link">Help &amp; FAQ</a>
             <a href="/help/shipping" data-nav class="nav-link">Shipping</a>
             <a href="/help/returns" data-nav class="nav-link">Returns &amp; Refunds</a>
@@ -142,29 +144,31 @@ export function renderStorefrontFooter() {
           </div>
         </div>
 
-        <div>
+        <div class="footer-col footer-newsletter-col">
           ${b01.newsletter_enabled !== false ? `
             <h3 class="filter-group-title">Editorial Newsletter</h3>
-            <p style="font-size:12.5px;color:var(--text-muted);margin:0 0 10px;">
+            <p class="footer-newsletter-desc">
               Optional marketing updates. Separate from transactional order emails.
             </p>
-            <form id="newsletter-form" style="display:flex;flex-direction:column;gap:8px;">
-              <input type="email" name="email" class="input-field" placeholder="Enter your email" required aria-label="Newsletter email" />
-              <label style="display:flex;align-items:flex-start;gap:8px;font-size:12px;color:var(--text-muted);cursor:pointer;">
-                <input type="checkbox" name="consent" required style="margin-top:3px;" />
-                <span>I explicitly consent to receive marketing emails from Shop by SCHA.</span>
-              </label>
-              <div style="display:flex;gap:8px;align-items:center;">
-                <button type="submit" class="btn-capsule-primary" style="min-width:auto;padding:9px 20px;font-size:13px;">Subscribe</button>
-                <button type="button" class="nav-btn" data-action="newsletter-unsubscribe" style="font-size:12px;color:var(--text-muted);">Unsubscribe</button>
+            <form id="newsletter-form" class="footer-newsletter-form">
+              <div class="footer-newsletter-input-row">
+                <input type="email" name="email" class="input-field" placeholder="Enter your email" required aria-label="Newsletter email" />
+                <button type="submit" class="btn-capsule-primary footer-subscribe-btn">Subscribe</button>
+              </div>
+              <div class="footer-newsletter-consent-row">
+                <label class="footer-consent-label">
+                  <input type="checkbox" name="consent" required style="margin-top:2px;" />
+                  <span>I explicitly consent to receive marketing emails from Shop by SCHA.</span>
+                </label>
+                <button type="button" class="nav-btn footer-unsub-btn" data-action="newsletter-unsubscribe">Unsubscribe</button>
               </div>
             </form>
           ` : ''}
         </div>
       </div>
-      <div style="max-width:1360px;margin:28px auto 0;padding-top:18px;border-top:1px solid var(--border-warm);display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;font-size:12px;color:var(--text-muted);">
-        <span>© 2026 Shop by SCHA. Launch payment method: DuitNow merchant QR + independent admin verification.</span>
-        <div style="display:flex;gap:16px;">
+      <div class="footer-bottom-bar">
+        <span>© 2026 Shop by SCHA. DuitNow merchant QR + admin verification.</span>
+        <div class="footer-bottom-links">
           <a href="/help/about" data-nav>About</a>
           <a href="/help/shipping" data-nav>Shipping</a>
           <a href="/help/returns" data-nav>Returns</a>

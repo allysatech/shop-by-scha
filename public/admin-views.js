@@ -261,7 +261,7 @@ export function renderAdminOverview(data) {
       <div class="card-panel">
         <h2 style="font-size:17px;font-weight:800;margin:0 0 12px;">Recent orders</h2>
         <div class="table-scroll">
-          <table class="data-table">
+          <table class="data-table compact-mobile-table">
             <thead>
               <tr>
                 <th>ORDER</th>
@@ -273,14 +273,17 @@ export function renderAdminOverview(data) {
               ${(data.recent_orders || []).map((o) => `
                 <tr>
                   <td>
-                    <a href="/admin/orders/${o.id}" data-nav style="font-weight:700;color:var(--rose-deep);">#${escapeHtml(o.order_number)}</a>
-                    ${o.is_demo ? `<span class="badge badge-demo" style="margin-left:4px;">DEMO</span>` : ''}
+                    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:4px;">
+                      <a href="/admin/orders/${o.id}" data-nav style="font-weight:700;color:var(--rose-deep);">#${escapeHtml(o.order_number)}</a>
+                      ${o.is_demo ? `<span class="badge badge-demo">DEMO</span>` : ''}
+                    </div>
                   </td>
-                  <td>${escapeHtml(o.total_formatted)}</td>
+                  <td style="font-weight:700;white-space:nowrap;">${escapeHtml(o.total_formatted)}</td>
                   <td>
-                    <span class="${getPaymentBadgeClass(o.payment_status)}">${escapeHtml(o.payment_status_label)}</span>
-                    /
-                    <span class="${getFulfilmentBadgeClass(o.fulfilment_status)}">${escapeHtml(o.fulfilment_status_label)}</span>
+                    <div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;">
+                      <span class="${getPaymentBadgeClass(o.payment_status)}">${escapeHtml(o.payment_status_label)}</span>
+                      <span class="${getFulfilmentBadgeClass(o.fulfilment_status)}">${escapeHtml(o.fulfilment_status_label)}</span>
+                    </div>
                   </td>
                 </tr>
               `).join('')}
@@ -293,17 +296,17 @@ export function renderAdminOverview(data) {
       <div class="card-panel">
         <h2 style="font-size:17px;font-weight:800;margin:0 0 12px;">Inventory snapshot</h2>
         <div style="display:flex;flex-direction:column;gap:12px;font-size:14px;">
-          <div style="display:flex;justify-content:space-between;padding-bottom:8px;border-bottom:1px solid var(--border-warm);">
-            <span>Low stock SKUs</span><strong style="color:var(--rose-deep);">${k.low_stock_skus_count || 0}</strong>
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding-bottom:8px;border-bottom:1px solid var(--border-warm);">
+            <span>Low stock SKUs</span><strong style="color:var(--rose-deep);flex-shrink:0;">${k.low_stock_skus_count || 0}</strong>
           </div>
-          <div style="display:flex;justify-content:space-between;padding-bottom:8px;border-bottom:1px solid var(--border-warm);">
-            <span>Out of stock SKUs</span><strong style="color:var(--status-alert-text);">${k.out_of_stock_skus_count || 0}</strong>
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding-bottom:8px;border-bottom:1px solid var(--border-warm);">
+            <span>Out of stock SKUs</span><strong style="color:var(--status-alert-text);flex-shrink:0;">${k.out_of_stock_skus_count || 0}</strong>
           </div>
-          <div style="display:flex;justify-content:space-between;padding-bottom:8px;border-bottom:1px solid var(--border-warm);">
-            <span>Active sellable SKUs</span><strong>${k.active_skus_count || 0}</strong>
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding-bottom:8px;border-bottom:1px solid var(--border-warm);">
+            <span>Active sellable SKUs</span><strong style="flex-shrink:0;">${k.active_skus_count || 0}</strong>
           </div>
-          <div style="display:flex;justify-content:space-between;">
-            <span>Unconfirmed draft references (REF-01..12)</span><strong>${k.draft_references_count || 0}</strong>
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
+            <span>Unconfirmed draft references (REF-01..12)</span><strong style="flex-shrink:0;">${k.draft_references_count || 0}</strong>
           </div>
         </div>
       </div>
