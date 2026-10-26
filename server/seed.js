@@ -3,8 +3,10 @@ const path = require('node:path');
 const { db, runTransaction } = require('./db');
 const { hashPassword, generateToken, hashToken } = require('./auth');
 
+const { PRIVATE_RECEIPTS_DIR } = require('./uploads');
+
 function ensureSamplePrivateReceipt() {
-  const receiptDir = path.join(__dirname, '..', 'storage', 'private_receipts');
+  const receiptDir = PRIVATE_RECEIPTS_DIR;
   if (!fs.existsSync(receiptDir)) {
     fs.mkdirSync(receiptDir, { recursive: true });
   }

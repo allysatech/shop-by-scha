@@ -51,16 +51,59 @@ function serializeCookie(name, value, options = {}) {
   return parts.join('; ');
 }
 
+const SESSION_SECRET = process.env.SESSION_SECRET || process.env.DATABASE_URL || 'scha-editorial-session-secret-2026';
+
+function signSessionPayload(payloadStr) {
+  return crypto.createHmac('sha256', SESSION_SECRET).update(payloadStr).digest('base64url');
+}
+
+function deriveCsrfToken(sessionId) {
+  return crypto.createHmac('sha256', `${SESSION_SECRET}:csrf`).update(String(sessionId)).digest('hex').slice(0, 48);
+}
+
 function createSession(userId, loginContext = 'customer', ttlHours = 24) {
-  const sessionId = generateToken(32);
-  const csrfToken = generateToken(24);
   const now = new Date();
   const expiresAt = new Date(now.getTime() + ttlHours * 3600 * 1000).toISOString();
+  const payloadObj = {
+    u: Number(userId),
+    c: loginContext,
+    e: new Date(expiresAt).getTime(),
+    n: crypto.randomBytes(12).toString('hex')
+  };
+  const payloadB64 = Buffer.from(JSON.stringify(payloadObj), 'utf8').toString('base64url');
+  const sig = signSessionPayload(payloadB64);
+  const sessionId = `${payloadB64}.${sig}`;
+  const csrfToken = deriveCsrfToken(sessionId);
+
   db.prepare(`
-    INSERT INTO sessions (id, user_id, csrf_token, login_context, expires_at, created_at)
+    INSERT OR REPLACE INTO sessions (id, user_id, csrf_token, login_context, expires_at, created_at)
     VALUES (?, ?, ?, ?, ?, ?)
   `).run(sessionId, userId, csrfToken, loginContext, expiresAt, now.toISOString());
   return { sessionId, csrfToken, expiresAt };
+}
+
+function tryRestoreSignedSession(sessionId) {
+  if (!sessionId || !sessionId.includes('.')) return null;
+  const [payloadB64, sig] = sessionId.split('.');
+  if (!payloadB64 || !sig) return null;
+  const expectedSig = signSessionPayload(payloadB64);
+  if (sig.length !== expectedSig.length) return null;
+  if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expectedSig))) return null;
+  try {
+    const payload = JSON.parse(Buffer.from(payloadB64, 'base64url').toString('utf8'));
+    if (!payload.u || !payload.e || payload.e <= Date.now()) return null;
+    const expiresAt = new Date(payload.e).toISOString();
+    const csrfToken = deriveCsrfToken(sessionId);
+    const userExists = db.prepare('SELECT id FROM users WHERE id = ? AND status = ?').get(payload.u, 'active');
+    if (!userExists) return null;
+    db.prepare(`
+      INSERT OR IGNORE INTO sessions (id, user_id, csrf_token, login_context, expires_at, created_at)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(sessionId, payload.u, csrfToken, payload.c || 'customer', expiresAt, new Date().toISOString());
+    return true;
+  } catch {
+    return null;
+  }
 }
 
 function getSessionFromRequest(req) {
@@ -68,13 +111,23 @@ function getSessionFromRequest(req) {
   const sessionId = req.headers['x-session-token'] || cookies[SESSION_COOKIE_NAME];
   if (!sessionId) return { user: null, session: null, expired: false };
 
-  const row = db.prepare(`
+  let row = db.prepare(`
     SELECT s.id AS session_id, s.user_id, s.csrf_token, s.login_context, s.expires_at,
            u.id, u.email, u.name, u.phone, u.role, u.status, u.mfa_enabled, u.is_demo
     FROM sessions s
     JOIN users u ON u.id = s.user_id
     WHERE s.id = ?
   `).get(sessionId);
+
+  if (!row && tryRestoreSignedSession(sessionId)) {
+    row = db.prepare(`
+      SELECT s.id AS session_id, s.user_id, s.csrf_token, s.login_context, s.expires_at,
+             u.id, u.email, u.name, u.phone, u.role, u.status, u.mfa_enabled, u.is_demo
+      FROM sessions s
+      JOIN users u ON u.id = s.user_id
+      WHERE s.id = ?
+    `).get(sessionId);
+  }
 
   if (!row) {
     return { user: null, session: null, expired: true };
