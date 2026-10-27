@@ -2465,8 +2465,10 @@ button, input, select, textarea {
 }
 @media (max-width:767px) {
  .brand-logo-img{height:60px;max-width:138px;}
- .header-inner{padding:8px 16px;gap:8px;}
- .header-icon-btn{width:40px;min-width:40px;}
+ .header-inner{padding:8px 12px;gap:6px;}
+ .header-icon-btn{width:38px;min-width:38px;}
+ .header-icon-btn svg{flex-shrink:0;}
+ .header-cart-btn{width:auto;min-width:auto;padding:0 8px;gap:5px;}
  .page-container{padding-left:16px;padding-right:16px;}
  .product-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:24px 12px;}
  .product-card-title{font-size:15px;line-height:1.4;}
