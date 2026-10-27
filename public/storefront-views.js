@@ -1604,76 +1604,81 @@ export function renderHelpPolicyPage(pageKey = 'about') {
 
   return `
     ${renderStorefrontHeader(`/help/${pageKey}`)}
-    <main id="main-content" class="page-container" style="max-width:1180px;">
-      <!-- SECTION 1: ABOUT SHOP BY SCHA -->
-      <section id="help-section-about" class="card-panel" style="padding:clamp(24px,4vw,44px);margin-bottom:28px;background:linear-gradient(180deg,#FFFFFF 0%,#FBF6F8 100%);">
-        <div class="checkout-grid" style="align-items:center;gap:32px;">
-          <div>
-            <span class="chrome-pill-tag" style="margin-bottom:14px;">EST. KUALA LUMPUR · CURATED EDIT</span>
-            <h1 class="page-title" style="font-size:clamp(2rem,4vw,3rem);line-height:1.05;margin:0 0 16px;letter-spacing:-0.03em;">
-              JUST SCHA
-            </h1>
-            <p style="font-size:16px;font-weight:600;color:var(--charcoal);line-height:1.6;margin:0 0 14px;">
-              ${escapeHtml(store.founder_story || 'An edit of eyewear, bags, beauty and footwear, selected with a little personality.')}
-            </p>
-            <p style="font-size:14.5px;color:var(--text-muted);line-height:1.75;margin:0 0 22px;">
-              Shop by SCHA brings together statement silhouettes and daily essentials — from sculptural top-handle bags and bold acetate frames to soft-focus complexion icons and pastel low-profile sneakers. Every piece in our edit is curated in considered quantities for clients across Malaysia.
-            </p>
-            <div style="display:flex;flex-wrap:wrap;gap:12px;">
-              <a href="/shop" data-nav class="btn-capsule-primary" style="min-width:auto;padding:12px 26px;">Explore the Catalogue</a>
-              <a href="/collections" data-nav class="btn-capsule-secondary" style="padding:12px 22px;">View 4 Collections</a>
+    <div style="position:relative;overflow:hidden;">
+      <div aria-hidden="true" style="position:fixed;inset:0;background:url('/images/about_bg_marble.jpg') center/cover no-repeat;opacity:0.4;pointer-events:none;z-index:0;"></div>
+      <main id="main-content" class="page-container" style="max-width:1180px;position:relative;z-index:1;">
+        <!-- SECTION 1: ABOUT SHOP BY SCHA -->
+        <section id="help-section-about" class="card-panel" style="position:relative;overflow:hidden;padding:clamp(24px,4vw,44px);margin-bottom:28px;background:#FFFFFF;">
+          <div aria-hidden="true" style="position:absolute;inset:0;background:url('/images/about_bg_marble.jpg') center/cover no-repeat;opacity:0.4;pointer-events:none;z-index:0;"></div>
+          <div style="position:relative;z-index:1;">
+            <div class="checkout-grid" style="align-items:center;gap:32px;">
+              <div>
+                <span class="chrome-pill-tag" style="margin-bottom:14px;background:rgba(255,255,255,0.88);">EST. KUALA LUMPUR · CURATED EDIT</span>
+                <h1 class="page-title" style="font-size:clamp(2rem,4vw,3rem);line-height:1.05;margin:0 0 16px;letter-spacing:-0.03em;">
+                  JUST SCHA
+                </h1>
+                <p style="font-size:16px;font-weight:600;color:var(--charcoal);line-height:1.6;margin:0 0 14px;">
+                  ${escapeHtml(store.founder_story || 'An edit of eyewear, bags, beauty and footwear, selected with a little personality.')}
+                </p>
+                <p style="font-size:14.5px;color:var(--charcoal);line-height:1.75;margin:0 0 22px;">
+                  Shop by SCHA brings together statement silhouettes and daily essentials — from sculptural top-handle bags and bold acetate frames to soft-focus complexion icons and pastel low-profile sneakers. Every piece in our edit is curated in considered quantities for clients across Malaysia.
+                </p>
+                <div style="display:flex;flex-wrap:wrap;gap:12px;">
+                  <a href="/shop" data-nav class="btn-capsule-primary" style="min-width:auto;padding:12px 26px;">Explore the Catalogue</a>
+                  <a href="/collections" data-nav class="btn-capsule-secondary" style="padding:12px 22px;background:rgba(255,255,255,0.9);">View 4 Collections</a>
+                </div>
+              </div>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                <a href="/collections/bags" data-nav style="background:rgba(255,255,255,0.92);backdrop-filter:blur(6px);border:1px solid var(--border-warm);border-radius:var(--radius-md);padding:16px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;">
+                  <img src="/images/08_jacquemus_pink_flap_handbag.png" alt="Bags Edit" style="height:110px;width:100%;object-fit:contain;" loading="lazy" />
+                  <strong style="font-size:13.5px;">Bags</strong>
+                  <span style="font-size:11.5px;color:var(--text-muted);">Top-handle &amp; Flap Icons</span>
+                </a>
+                <a href="/collections/eyewear" data-nav style="background:rgba(255,255,255,0.92);backdrop-filter:blur(6px);border:1px solid var(--border-warm);border-radius:var(--radius-md);padding:16px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;">
+                  <img src="/images/01_gentle_monster_black_sunglasses.png" alt="Eyewear Edit" style="height:110px;width:100%;object-fit:contain;" loading="lazy" />
+                  <strong style="font-size:13.5px;">Eyewear</strong>
+                  <span style="font-size:11.5px;color:var(--text-muted);">Sculptural &amp; Metallic Frames</span>
+                </a>
+                <a href="/collections/beauty" data-nav style="background:rgba(255,255,255,0.92);backdrop-filter:blur(6px);border:1px solid var(--border-warm);border-radius:var(--radius-md);padding:16px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;">
+                  <img src="/images/10_charlotte_tilbury_airbrush_flawless_finish_powder.png" alt="Beauty Edit" style="height:110px;width:100%;object-fit:contain;" loading="lazy" />
+                  <strong style="font-size:13.5px;">Beauty</strong>
+                  <span style="font-size:11.5px;color:var(--text-muted);">Complexion &amp; Lip Edit</span>
+                </a>
+                <a href="/collections/footwear" data-nav style="background:rgba(255,255,255,0.92);backdrop-filter:blur(6px);border:1px solid var(--border-warm);border-radius:var(--radius-md);padding:16px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;">
+                  <img src="/images/12_onitsuka_tiger_pink_sneakers.png" alt="Footwear Edit" style="height:110px;width:100%;object-fit:contain;" loading="lazy" />
+                  <strong style="font-size:13.5px;">Footwear</strong>
+                  <span style="font-size:11.5px;color:var(--text-muted);">Pastel Everyday Sneakers</span>
+                </a>
+              </div>
+            </div>
+
+            <!-- 3 Brand Pillars -->
+            <div class="form-grid-3" style="margin-top:28px;padding-top:24px;border-top:1px solid rgba(122,46,77,0.14);">
+              <div style="background:rgba(255,255,255,0.92);backdrop-filter:blur(6px);padding:18px;border-radius:var(--radius-md);border:1px solid var(--border-warm);">
+                <span class="badge badge-ref" style="margin-bottom:8px;">01 · CURATION</span>
+                <h3 style="font-size:15.5px;font-weight:800;margin:0 0 6px;">Authentic &amp; Inspected</h3>
+                <p style="font-size:13px;color:var(--text-muted);margin:0;line-height:1.6;">
+                  Every item is individually inspected for colour accuracy, hardware finish, and packaging integrity prior to dispatch.
+                </p>
+              </div>
+              <div style="background:rgba(255,255,255,0.92);backdrop-filter:blur(6px);padding:18px;border-radius:var(--radius-md);border:1px solid var(--border-warm);">
+                <span class="badge badge-ref" style="margin-bottom:8px;">02 · CHECKOUT</span>
+                <h3 style="font-size:15.5px;font-weight:800;margin:0 0 6px;">DuitNow QR &amp; Stock Hold</h3>
+                <p style="font-size:13px;color:var(--text-muted);margin:0;line-height:1.6;">
+                  Your selected SKU is reserved when you place an order while our team verifies your DuitNow QR payment receipt.
+                </p>
+              </div>
+              <div style="background:rgba(255,255,255,0.92);backdrop-filter:blur(6px);padding:18px;border-radius:var(--radius-md);border:1px solid var(--border-warm);">
+                <span class="badge badge-ref" style="margin-bottom:8px;">03 · DISPATCH</span>
+                <h3 style="font-size:15.5px;font-weight:800;margin:0 0 6px;">Nationwide Tracked Delivery</h3>
+                <p style="font-size:13px;color:var(--text-muted);margin:0;line-height:1.6;">
+                  Tracked door-to-door delivery across Peninsular Malaysia, Sabah, Sarawak, and Labuan with live waybill updates.
+                </p>
+              </div>
             </div>
           </div>
-
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-            <a href="/collections/bags" data-nav style="background:var(--bg-white);border:1px solid var(--border-warm);border-radius:var(--radius-md);padding:16px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;">
-              <img src="/images/08_jacquemus_pink_flap_handbag.png" alt="Bags Edit" style="height:110px;width:100%;object-fit:contain;" loading="lazy" />
-              <strong style="font-size:13.5px;">Bags</strong>
-              <span style="font-size:11.5px;color:var(--text-muted);">Top-handle &amp; Flap Icons</span>
-            </a>
-            <a href="/collections/eyewear" data-nav style="background:var(--bg-white);border:1px solid var(--border-warm);border-radius:var(--radius-md);padding:16px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;">
-              <img src="/images/01_gentle_monster_black_sunglasses.png" alt="Eyewear Edit" style="height:110px;width:100%;object-fit:contain;" loading="lazy" />
-              <strong style="font-size:13.5px;">Eyewear</strong>
-              <span style="font-size:11.5px;color:var(--text-muted);">Sculptural &amp; Metallic Frames</span>
-            </a>
-            <a href="/collections/beauty" data-nav style="background:var(--bg-white);border:1px solid var(--border-warm);border-radius:var(--radius-md);padding:16px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;">
-              <img src="/images/10_charlotte_tilbury_airbrush_flawless_finish_powder.png" alt="Beauty Edit" style="height:110px;width:100%;object-fit:contain;" loading="lazy" />
-              <strong style="font-size:13.5px;">Beauty</strong>
-              <span style="font-size:11.5px;color:var(--text-muted);">Complexion &amp; Lip Edit</span>
-            </a>
-            <a href="/collections/footwear" data-nav style="background:var(--bg-white);border:1px solid var(--border-warm);border-radius:var(--radius-md);padding:16px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;">
-              <img src="/images/12_onitsuka_tiger_pink_sneakers.png" alt="Footwear Edit" style="height:110px;width:100%;object-fit:contain;" loading="lazy" />
-              <strong style="font-size:13.5px;">Footwear</strong>
-              <span style="font-size:11.5px;color:var(--text-muted);">Pastel Everyday Sneakers</span>
-            </a>
-          </div>
-        </div>
-
-        <!-- 3 Brand Pillars -->
-        <div class="form-grid-3" style="margin-top:28px;padding-top:24px;border-top:1px solid var(--border-warm);">
-          <div style="background:var(--bg-white);padding:18px;border-radius:var(--radius-md);border:1px solid var(--border-warm);">
-            <span class="badge badge-ref" style="margin-bottom:8px;">01 · CURATION</span>
-            <h3 style="font-size:15.5px;font-weight:800;margin:0 0 6px;">Authentic &amp; Inspected</h3>
-            <p style="font-size:13px;color:var(--text-muted);margin:0;line-height:1.6;">
-              Every item is individually inspected for colour accuracy, hardware finish, and packaging integrity prior to dispatch.
-            </p>
-          </div>
-          <div style="background:var(--bg-white);padding:18px;border-radius:var(--radius-md);border:1px solid var(--border-warm);">
-            <span class="badge badge-ref" style="margin-bottom:8px;">02 · CHECKOUT</span>
-            <h3 style="font-size:15.5px;font-weight:800;margin:0 0 6px;">DuitNow QR &amp; Stock Hold</h3>
-            <p style="font-size:13px;color:var(--text-muted);margin:0;line-height:1.6;">
-              Your selected SKU is reserved when you place an order while our team verifies your DuitNow QR payment receipt.
-            </p>
-          </div>
-          <div style="background:var(--bg-white);padding:18px;border-radius:var(--radius-md);border:1px solid var(--border-warm);">
-            <span class="badge badge-ref" style="margin-bottom:8px;">03 · DISPATCH</span>
-            <h3 style="font-size:15.5px;font-weight:800;margin:0 0 6px;">Nationwide Tracked Delivery</h3>
-            <p style="font-size:13px;color:var(--text-muted);margin:0;line-height:1.6;">
-              Tracked door-to-door delivery across Peninsular Malaysia, Sabah, Sarawak, and Labuan with live waybill updates.
-            </p>
-          </div>
-        </div>
-      </section>
+        </section>
 
       <!-- SECTION 2: SHIPPING & DELIVERY -->
       <section id="help-section-shipping" class="card-panel" style="padding:clamp(22px,3.5vw,36px);margin-bottom:28px;">
@@ -1848,7 +1853,8 @@ export function renderHelpPolicyPage(pageKey = 'about') {
           </p>
         </section>
       </div>
-    </main>
+      </main>
+    </div>
     ${renderStorefrontFooter()}
   `;
 }
