@@ -244,138 +244,24 @@ export function renderHomePage() {
   return `
     ${renderStorefrontHeader('/')}
     <main id="main-content">
-      <!-- 1. INTERACTIVE SHOPPING COLLAGE HERO (H01 Desktop / H02 Mobile) -->
+      <!-- 1. LAYERED PRODUCT HERO (H01 Desktop / H02 Mobile) -->
       ${hero.visible !== false ? `
-        <section class="hero-editorial hero-collage-section" aria-label="Editorial Hero">
+        <section class="hero-editorial" aria-label="Editorial Hero">
           ${hero.show_chrome_accent !== false ? `<div class="chrome-accent-orb" aria-hidden="true"></div>` : ''}
-          <div class="hero-collage-layout">
-            <!-- Left Column on Desktop / Top on Mobile: Headline, Supporting Copy & Shopping CTA -->
-            <div class="hero-copy-column">
-              <span class="chrome-pill-tag hero-kicker-pill">CURATED BY SCHA · PERSONAL SHOPPER EDIT</span>
-              <h1 class="hero-oversized-headline">${escapeHtml(hero.headline || 'your next favourite')}</h1>
-              <p class="hero-brand-line">${escapeHtml(hero.subheadline || 'A considered edit.\nChosen by SCHA.').replace(/\n/g, '<br/>')}</p>
-              <p class="hero-supporting-copy">
-                Statement eyewear, sculptural handbags, complexion icons, and everyday footwear — hover any piece above the pink trolley to spotlight its collection.
-              </p>
-              <div class="hero-cta-row">
-                <a href="${escapeHtml(hero.cta_link || '/shop')}" data-nav class="btn-capsule-primary">
-                  ${escapeHtml(hero.cta_text || 'Shop now')}
-                </a>
-                <a href="/collections" data-nav class="btn-capsule-secondary">
-                  Explore Collections
-                </a>
-              </div>
-              <nav class="hero-desktop-category-pills" aria-label="Quick category spotlight links">
-                <a href="/collections/eyewear" data-nav class="hero-cat-pill" data-collage-trigger="eyewear">Shop Eyewear</a>
-                <a href="/collections/bags" data-nav class="hero-cat-pill" data-collage-trigger="bags">Shop Bags</a>
-                <a href="/collections/footwear" data-nav class="hero-cat-pill" data-collage-trigger="footwear">Shop Footwear</a>
-                <a href="/collections/beauty" data-nav class="hero-cat-pill" data-collage-trigger="beauty">Shop Beauty</a>
-                <a href="/shop" data-nav class="hero-cat-pill" data-collage-trigger="watches">Shop Watches</a>
-              </nav>
+          <div class="hero-stage">
+            <h1 class="hero-oversized-headline">${escapeHtml(hero.headline || 'your next favourite')}</h1>
+            <div class="hero-product-layer">
+              <img
+                src="${escapeHtml(hero.hero_image_path || '/images/08_jacquemus_pink_flap_handbag.png')}"
+                alt="${escapeHtml(hero.hero_image_alt || 'Jacquemus Pink Flap Handbag')}"
+              />
             </div>
-
-            <!-- Right Column on Desktop / Portrait Composition on Mobile: Interactive Product Collage -->
-            <div class="hero-collage-column">
-              <div class="hero-collage-stage" id="hero-collage-stage" role="group" aria-label="Interactive product collage">
-                <!-- Semi-transparent spotlight dimming overlay (below active object, above inactive objects) -->
-                <div class="hero-collage-dimmer" aria-hidden="true"></div>
-
-                <!-- Decorative Objects (Non-interactive) -->
-                <div class="collage-item collage-item-decorative collage-pos-shopping-bag" aria-hidden="true">
-                  <img src="/images/collage_shopping_bag.png" alt="" draggable="false" />
-                </div>
-                <div class="collage-item collage-item-decorative collage-pos-trolley" aria-hidden="true">
-                  <img src="/images/collage_trolley.png" alt="" draggable="false" />
-                </div>
-
-                <!-- Interactive Product 1: Sunglasses -> Shop Eyewear -->
-                <a
-                  href="/collections/eyewear"
-                  data-nav
-                  class="collage-item collage-item-interactive collage-pos-sunglasses"
-                  data-collage-item="eyewear"
-                  aria-label="Shop Eyewear"
-                >
-                  <span class="collage-hit-area" data-collage-hit="eyewear"></span>
-                  <img src="/images/collage_sunglasses.png" alt="Pink Cat-Eye Sunglasses" draggable="false" />
-                  <span class="collage-spotlight-label label-bottom-left">Shop Eyewear</span>
-                </a>
-
-                <!-- Interactive Product 2: Handbag -> Shop Bags -->
-                <a
-                  href="/collections/bags"
-                  data-nav
-                  class="collage-item collage-item-interactive collage-pos-handbag"
-                  data-collage-item="bags"
-                  aria-label="Shop Bags"
-                >
-                  <span class="collage-hit-area" data-collage-hit="bags"></span>
-                  <img src="/images/collage_handbag.png" alt="Cream Top-Handle Handbag" draggable="false" />
-                  <span class="collage-spotlight-label label-top-left">Shop Bags</span>
-                </a>
-
-                <!-- Interactive Product 3: Slingback Heel -> Shop Footwear -->
-                <a
-                  href="/collections/footwear"
-                  data-nav
-                  class="collage-item collage-item-interactive collage-pos-heel"
-                  data-collage-item="footwear"
-                  aria-label="Shop Footwear"
-                >
-                  <span class="collage-hit-area" data-collage-hit="footwear"></span>
-                  <img src="/images/collage_heel.png" alt="Pink Slingback Heel" draggable="false" />
-                  <span class="collage-spotlight-label label-left">Shop Footwear</span>
-                </a>
-
-                <!-- Interactive Product 4: Lipstick -> Shop Beauty -->
-                <a
-                  href="/collections/beauty"
-                  data-nav
-                  class="collage-item collage-item-interactive collage-pos-lipstick"
-                  data-collage-item="lipstick"
-                  aria-label="Shop Beauty — Lip Edit"
-                >
-                  <span class="collage-hit-area" data-collage-hit="lipstick"></span>
-                  <img src="/images/collage_lipstick.png" alt="Pink Satin Lipstick" draggable="false" />
-                  <span class="collage-spotlight-label label-left">Shop Beauty</span>
-                </a>
-
-                <!-- Interactive Product 5: Perfume -> Shop Beauty -->
-                <a
-                  href="/collections/beauty"
-                  data-nav
-                  class="collage-item collage-item-interactive collage-pos-perfume"
-                  data-collage-item="beauty"
-                  aria-label="Shop Beauty &amp; Fragrance"
-                >
-                  <span class="collage-hit-area" data-collage-hit="beauty"></span>
-                  <img src="/images/collage_perfume.png" alt="Pink Ribbon Perfume" draggable="false" />
-                  <span class="collage-spotlight-label label-top">Shop Beauty</span>
-                </a>
-
-                <!-- Interactive Product 6: Watch -> Shop Watches -->
-                <a
-                  href="/shop"
-                  data-nav
-                  class="collage-item collage-item-interactive collage-pos-watch"
-                  data-collage-item="watches"
-                  aria-label="Shop Watches"
-                >
-                  <span class="collage-hit-area" data-collage-hit="watches"></span>
-                  <img src="/images/collage_watch.png" alt="Rose-Gold Watch" draggable="false" />
-                  <span class="collage-spotlight-label label-left">Shop Watches</span>
-                </a>
-              </div>
-
-              <!-- Mobile visible single-tap category links underneath the portrait collage -->
-              <nav class="hero-mobile-category-links" aria-label="Shop by Category">
-                <a href="/collections/eyewear" data-nav class="hero-cat-pill">Shop Eyewear</a>
-                <a href="/collections/bags" data-nav class="hero-cat-pill">Shop Bags</a>
-                <a href="/collections/footwear" data-nav class="hero-cat-pill">Shop Footwear</a>
-                <a href="/collections/beauty" data-nav class="hero-cat-pill">Shop Beauty</a>
-                <a href="/shop" data-nav class="hero-cat-pill">Shop Watches</a>
-              </nav>
-            </div>
+          </div>
+          <div class="hero-bottom-bar">
+            <p class="hero-brand-line">${escapeHtml(hero.subheadline || 'A considered edit.\nChosen by SCHA.').replace(/\n/g, '<br/>')}</p>
+            <a href="${escapeHtml(hero.cta_link || '/shop')}" data-nav class="btn-capsule-primary">
+              ${escapeHtml(hero.cta_text || 'Shop now')}
+            </a>
           </div>
         </section>
       ` : ''}
