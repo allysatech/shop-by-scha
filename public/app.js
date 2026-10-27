@@ -164,42 +164,6 @@ function openMobileMenuDrawer() {
             <span>About</span>
           </a>
         </nav>
-
-        <div class="side-nav-footer">
-          <a href="/search" data-nav class="side-nav-quicklink">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="11" cy="11" r="7.5"></circle>
-              <line x1="16.65" y1="16.65" x2="21" y2="21"></line>
-            </svg>
-            <span>Search Catalogue</span>
-          </a>
-          <a href="${state.user ? (state.user.role === 'ADMIN' ? '/admin' : '/account') : '/login'}" data-nav class="side-nav-quicklink">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-              <circle cx="12" cy="7" r="4"></circle>
-            </svg>
-            <span>${state.user ? (state.user.role === 'ADMIN' ? 'Admin Overview' : 'My Account') : 'Customer Log in / Register'}</span>
-          </a>
-          <a href="/cart" data-nav class="side-nav-quicklink">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="9" cy="21" r="1.5"></circle>
-              <circle cx="19" cy="21" r="1.5"></circle>
-              <path d="M2.5 3h2.8l2.2 11.2a2 2 0 0 0 2 1.6h9.2a2 2 0 0 0 1.95-1.55L22 7H6.1"></path>
-            </svg>
-            <span>Shopping Cart (${bagCount})</span>
-          </a>
-          <a href="/order/confirmation" data-nav class="side-nav-quicklink">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="3" y="4" width="18" height="16" rx="2"></rect>
-              <line x1="7" y1="9" x2="17" y2="9"></line>
-              <line x1="7" y1="14" x2="13" y2="14"></line>
-            </svg>
-            <span>Track Guest Order</span>
-          </a>
-          <a href="${state.user && state.user.role === 'ADMIN' ? '/admin' : '/admin/login'}" data-nav class="side-nav-quicklink admin-link">
-            <span>Admin Workspace</span>
-          </a>
-        </div>
       </aside>
     </div>
   `;

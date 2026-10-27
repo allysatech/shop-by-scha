@@ -1309,7 +1309,7 @@ button, input, select, textarea {
   background: var(--bg-offwhite);
   border-right: 1.5px solid var(--pink-soft);
   padding: 24px 22px;
-  justify-content: space-between;
+  justify-content: flex-start;
 }
 
 .side-nav-header {
