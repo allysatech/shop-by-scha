@@ -1611,45 +1611,20 @@ export function renderHelpPolicyPage(pageKey = 'about') {
         <section id="help-section-about" class="card-panel" style="position:relative;overflow:hidden;padding:clamp(24px,4vw,44px);margin-bottom:28px;background:#FFFFFF;">
           <div aria-hidden="true" style="position:absolute;inset:0;background:url('/images/about_bg_marble.jpg') center/cover no-repeat;opacity:0.4;pointer-events:none;z-index:0;"></div>
           <div style="position:relative;z-index:1;">
-            <div class="checkout-grid" style="align-items:center;gap:32px;">
-              <div>
-                <span class="chrome-pill-tag" style="margin-bottom:14px;background:rgba(255,255,255,0.88);">EST. KUALA LUMPUR · CURATED EDIT</span>
-                <h1 class="page-title" style="font-size:clamp(2rem,4vw,3rem);line-height:1.05;margin:0 0 16px;letter-spacing:-0.03em;">
-                  JUST SCHA
-                </h1>
-                <p style="font-size:16px;font-weight:600;color:var(--charcoal);line-height:1.6;margin:0 0 14px;">
-                  ${escapeHtml(store.founder_story || 'An edit of eyewear, bags, beauty and footwear, selected with a little personality.')}
-                </p>
-                <p style="font-size:14.5px;color:var(--charcoal);line-height:1.75;margin:0 0 22px;">
-                  Shop by SCHA brings together statement silhouettes and daily essentials — from sculptural top-handle bags and bold acetate frames to soft-focus complexion icons and pastel low-profile sneakers. Every piece in our edit is curated in considered quantities for clients across Malaysia.
-                </p>
-                <div style="display:flex;flex-wrap:wrap;gap:12px;">
-                  <a href="/shop" data-nav class="btn-capsule-primary" style="min-width:auto;padding:12px 26px;">Explore the Catalogue</a>
-                  <a href="/collections" data-nav class="btn-capsule-secondary" style="padding:12px 22px;background:rgba(255,255,255,0.9);">View 4 Collections</a>
-                </div>
-              </div>
-
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-                <a href="/collections/bags" data-nav style="background:rgba(255,255,255,0.92);backdrop-filter:blur(6px);border:1px solid var(--border-warm);border-radius:var(--radius-md);padding:16px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;">
-                  <img src="/images/08_jacquemus_pink_flap_handbag.png" alt="Bags Edit" style="height:110px;width:100%;object-fit:contain;" loading="lazy" />
-                  <strong style="font-size:13.5px;">Bags</strong>
-                  <span style="font-size:11.5px;color:var(--text-muted);">Top-handle &amp; Flap Icons</span>
-                </a>
-                <a href="/collections/eyewear" data-nav style="background:rgba(255,255,255,0.92);backdrop-filter:blur(6px);border:1px solid var(--border-warm);border-radius:var(--radius-md);padding:16px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;">
-                  <img src="/images/01_gentle_monster_black_sunglasses.png" alt="Eyewear Edit" style="height:110px;width:100%;object-fit:contain;" loading="lazy" />
-                  <strong style="font-size:13.5px;">Eyewear</strong>
-                  <span style="font-size:11.5px;color:var(--text-muted);">Sculptural &amp; Metallic Frames</span>
-                </a>
-                <a href="/collections/beauty" data-nav style="background:rgba(255,255,255,0.92);backdrop-filter:blur(6px);border:1px solid var(--border-warm);border-radius:var(--radius-md);padding:16px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;">
-                  <img src="/images/10_charlotte_tilbury_airbrush_flawless_finish_powder.png" alt="Beauty Edit" style="height:110px;width:100%;object-fit:contain;" loading="lazy" />
-                  <strong style="font-size:13.5px;">Beauty</strong>
-                  <span style="font-size:11.5px;color:var(--text-muted);">Complexion &amp; Lip Edit</span>
-                </a>
-                <a href="/collections/footwear" data-nav style="background:rgba(255,255,255,0.92);backdrop-filter:blur(6px);border:1px solid var(--border-warm);border-radius:var(--radius-md);padding:16px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;">
-                  <img src="/images/12_onitsuka_tiger_pink_sneakers.png" alt="Footwear Edit" style="height:110px;width:100%;object-fit:contain;" loading="lazy" />
-                  <strong style="font-size:13.5px;">Footwear</strong>
-                  <span style="font-size:11.5px;color:var(--text-muted);">Pastel Everyday Sneakers</span>
-                </a>
+            <div style="max-width:760px;">
+              <span class="chrome-pill-tag" style="margin-bottom:14px;background:rgba(255,255,255,0.88);">EST. KUALA LUMPUR · CURATED EDIT</span>
+              <h1 class="page-title" style="font-size:clamp(2rem,4vw,3rem);line-height:1.05;margin:0 0 16px;letter-spacing:-0.03em;">
+                JUST SCHA
+              </h1>
+              <p style="font-size:16px;font-weight:600;color:var(--charcoal);line-height:1.6;margin:0 0 14px;">
+                ${escapeHtml(store.founder_story || 'An edit of eyewear, bags, beauty and footwear, selected with a little personality.')}
+              </p>
+              <p style="font-size:14.5px;color:var(--charcoal);line-height:1.75;margin:0 0 22px;">
+                Shop by SCHA brings together statement silhouettes and daily essentials — from sculptural top-handle bags and bold acetate frames to soft-focus complexion icons and pastel low-profile sneakers. Every piece in our edit is curated in considered quantities for clients across Malaysia.
+              </p>
+              <div style="display:flex;flex-wrap:wrap;gap:12px;">
+                <a href="/shop" data-nav class="btn-capsule-primary" style="min-width:auto;padding:12px 26px;">Explore the Catalogue</a>
+                <a href="/collections" data-nav class="btn-capsule-secondary" style="padding:12px 22px;background:rgba(255,255,255,0.9);">View 4 Collections</a>
               </div>
             </div>
 
