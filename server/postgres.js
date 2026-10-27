@@ -21,10 +21,28 @@ function createPostgres() {
     pool={query:(s,p)=>engine.query(s,p),connect:async()=>({query:(s,p)=>engine.query(s,p),release(){}}),end:()=>engine.close()};
   } else {
     const {Pool,types}=require('pg');types.setTypeParser(20,Number);
-    pool=new Pool({connectionString:process.env.DATABASE_URL,max:10,connectionTimeoutMillis:10000,idleTimeoutMillis:10000});
+    pool=new Pool({connectionString:process.env.DATABASE_URL,max:6,connectionTimeoutMillis:15000,idleTimeoutMillis:4000,allowExitOnIdle:true,keepAlive:true});
     pool.on('error',()=>console.error('Database connection failed; request will fail safely.'));
   }
-  const query=(sql,params=[]) => (context.getStore()||pool).query(translate(sql),params);
+  const query=async (sql,params=[]) => {
+    const translated=translate(sql);
+    const store=context.getStore();
+    if(store)return store.query(translated,params);
+    let lastErr;
+    for(let attempt=0;attempt<3;attempt++){
+      try{
+        return await pool.query(translated,params);
+      }catch(err){
+        lastErr=err;
+        const msg=String(err?.message||'');
+        const code=String(err?.code||'');
+        const isTransient=/terminated|timeout|ECONNRESET|EPIPE|ENOTFOUND|EAI_AGAIN|Connection ended|Client has encountered a connection error/i.test(msg) || ['57P01','57P02','57P03','08000','08003','08006','08001','08004','ECONNRESET','ETIMEDOUT'].includes(code);
+        if(!isTransient || attempt===2)throw err;
+        await new Promise(r=>setTimeout(r,120*(attempt+1)));
+      }
+    }
+    throw lastErr;
+  };
   const db={driver:'postgres',
     prepare(sql){return {
       async get(...params){return (await query(sql,params)).rows[0];},

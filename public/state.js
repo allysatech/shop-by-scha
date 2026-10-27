@@ -196,14 +196,31 @@ export async function apiFetch(url, options = {}) {
     options.body = JSON.stringify(options.body);
   }
 
-  const res = await fetch(url, {
-    ...options,
-    headers,
-    credentials: 'same-origin'
-  });
-
-  const contentType = res.headers.get('content-type') || '';
-  const data = contentType.includes('application/json') ? await res.json() : await res.text();
+  const method = String(options.method || 'GET').toUpperCase();
+  let res;
+  let data;
+  for (let attempt = 0; attempt < (method === 'GET' ? 2 : 1); attempt++) {
+    try {
+      res = await fetch(url, {
+        ...options,
+        headers,
+        credentials: 'same-origin'
+      });
+      const contentType = res.headers.get('content-type') || '';
+      data = contentType.includes('application/json') ? await res.json() : await res.text();
+      if (res.status >= 500 && method === 'GET' && attempt === 0) {
+        await new Promise((r) => setTimeout(r, 250));
+        continue;
+      }
+      break;
+    } catch (fetchErr) {
+      if (method === 'GET' && attempt === 0) {
+        await new Promise((r) => setTimeout(r, 250));
+        continue;
+      }
+      throw fetchErr;
+    }
+  }
 
   if (!res.ok) {
     if (res.status === 401 && data && data.code === 'SESSION_EXPIRED') {
@@ -217,7 +234,6 @@ export async function apiFetch(url, options = {}) {
     throw err;
   }
 
-  const method = String(options.method || 'GET').toUpperCase();
   if (method !== 'GET' && method !== 'HEAD') {
     if (
       url.startsWith('/api/admin/products') ||

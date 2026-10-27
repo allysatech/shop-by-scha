@@ -459,7 +459,7 @@ async function runTransaction(fn) {
   catch(e){db.exec('ROLLBACK');throw e;}
 }
 const ready=(async()=>{
-  if(usePostgres && !require('./runtime').sandbox && process.env.SCHA_MIGRATE!=='1'){await db.prepare('SELECT id FROM store_settings LIMIT 1').all();return;}
+  if(usePostgres && !require('./runtime').sandbox && process.env.SCHA_MIGRATE!=='1'){return;}
   await initSchema();
   await db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_bank_ref_ci ON payment_reviews(UPPER(actual_bank_reference)) WHERE action = 'confirm_payment' AND actual_bank_reference IS NOT NULL");
   const columns = await db.columns('products');
