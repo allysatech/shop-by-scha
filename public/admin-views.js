@@ -225,98 +225,100 @@ export function renderAdminOverview(data) {
       </a>
     </div>
 
-    <div class="checkout-grid" style="margin-bottom:24px;">
-      <!-- Sales Trend Chart -->
-      <div class="card-panel">
-        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">
-          <h2 style="font-size:17px;font-weight:800;margin:0;">Sales trend</h2>
-          <span style="font-size:12px;color:var(--text-muted);">Net paid sales / selected dates</span>
-        </div>
-        <svg viewBox="0 0 400 130" style="width:100%;height:140px;background:var(--bg-offwhite);border-radius:var(--radius-sm);padding:8px;">
-          <polyline fill="none" stroke="#8D3656" stroke-width="3" points="${points}" />
-        </svg>
-        <div style="display:flex;justify-content:space-between;font-size:11.5px;color:var(--text-muted);margin-top:8px;">
-          <span>${escapeHtml(data.date_from)}</span>
-          <span>Confirmed paid minus completed refunds</span>
-          <span>${escapeHtml(data.date_to)}</span>
-        </div>
-      </div>
-
-      <!-- Best-selling Products -->
-      <div class="card-panel">
-        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;">
-          <h2 style="font-size:17px;font-weight:800;margin:0;">Best-selling products</h2>
-          <a href="/admin/products" data-nav style="font-size:12px;color:var(--rose-deep);font-weight:700;">View all &gt;</a>
-        </div>
-        ${(data.top_products || []).length === 0 ? `
-          <p style="font-size:13px;color:var(--text-muted);">No confirmed product sales in this period.</p>
-        ` : `
-          <div style="display:flex;flex-direction:column;gap:10px;">
-            ${data.top_products.map((tp) => `
-              <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--bg-offwhite);border-radius:var(--radius-sm);font-size:13px;">
-                <div>
-                  <strong>${escapeHtml(tp.title)}</strong>
-                  <div style="font-size:11.5px;color:var(--text-muted);">SKU: ${escapeHtml(tp.sku)} · Units: ${tp.units_sold}</div>
-                </div>
-                <strong>${escapeHtml(tp.revenue_formatted)}</strong>
-              </div>
-            `).join('')}
-          </div>
-        `}
-      </div>
-    </div>
-
     <div class="checkout-grid">
-      <!-- Recent Orders -->
-      <div class="card-panel">
-        <h2 style="font-size:17px;font-weight:800;margin:0 0 12px;">Recent orders</h2>
-        <div class="table-scroll">
-          <table class="data-table compact-mobile-table">
-            <thead>
-              <tr>
-                <th>ORDER</th>
-                <th>TOTAL</th>
-                <th>STATUS</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${(data.recent_orders || []).map((o) => `
+      <div style="display:flex;flex-direction:column;gap:20px;min-width:0;">
+        <!-- Sales Trend Chart -->
+        <div class="card-panel">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">
+            <h2 style="font-size:17px;font-weight:800;margin:0;">Sales trend</h2>
+            <span style="font-size:12px;color:var(--text-muted);">Net paid sales / selected dates</span>
+          </div>
+          <svg viewBox="0 0 400 130" style="width:100%;height:140px;background:var(--bg-offwhite);border-radius:var(--radius-sm);padding:8px;">
+            <polyline fill="none" stroke="#8D3656" stroke-width="3" points="${points}" />
+          </svg>
+          <div style="display:flex;justify-content:space-between;font-size:11.5px;color:var(--text-muted);margin-top:8px;">
+            <span>${escapeHtml(data.date_from)}</span>
+            <span>Confirmed paid minus completed refunds</span>
+            <span>${escapeHtml(data.date_to)}</span>
+          </div>
+        </div>
+
+        <!-- Recent Orders -->
+        <div class="card-panel">
+          <h2 style="font-size:17px;font-weight:800;margin:0 0 12px;">Recent orders</h2>
+          <div class="table-scroll">
+            <table class="data-table compact-mobile-table">
+              <thead>
                 <tr>
-                  <td>
-                    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:4px;">
-                      <a href="/admin/orders/${o.id}" data-nav style="font-weight:700;color:var(--rose-deep);">#${escapeHtml(o.order_number)}</a>
-                      ${o.is_demo ? `<span class="badge badge-demo">DEMO</span>` : ''}
-                    </div>
-                  </td>
-                  <td style="font-weight:700;white-space:nowrap;">${escapeHtml(o.total_formatted)}</td>
-                  <td>
-                    <div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;">
-                      <span class="${getPaymentBadgeClass(o.payment_status)}">${escapeHtml(o.payment_status_label)}</span>
-                      <span class="${getFulfilmentBadgeClass(o.fulfilment_status)}">${escapeHtml(o.fulfilment_status_label)}</span>
-                    </div>
-                  </td>
+                  <th>ORDER</th>
+                  <th>TOTAL</th>
+                  <th>STATUS</th>
                 </tr>
-              `).join('')}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                ${(data.recent_orders || []).map((o) => `
+                  <tr>
+                    <td>
+                      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:4px;">
+                        <a href="/admin/orders/${o.id}" data-nav style="font-weight:700;color:var(--rose-deep);">#${escapeHtml(o.order_number)}</a>
+                        ${o.is_demo ? `<span class="badge badge-demo">DEMO</span>` : ''}
+                      </div>
+                    </td>
+                    <td style="font-weight:700;white-space:nowrap;">${escapeHtml(o.total_formatted)}</td>
+                    <td>
+                      <div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;">
+                        <span class="${getPaymentBadgeClass(o.payment_status)}">${escapeHtml(o.payment_status_label)}</span>
+                        <span class="${getFulfilmentBadgeClass(o.fulfilment_status)}">${escapeHtml(o.fulfilment_status_label)}</span>
+                      </div>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
-      <!-- Inventory Snapshot -->
-      <div class="card-panel">
-        <h2 style="font-size:17px;font-weight:800;margin:0 0 12px;">Inventory snapshot</h2>
-        <div style="display:flex;flex-direction:column;gap:12px;font-size:14px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding-bottom:8px;border-bottom:1px solid var(--border-warm);">
-            <span>Low stock SKUs</span><strong style="color:var(--rose-deep);flex-shrink:0;">${k.low_stock_skus_count || 0}</strong>
+      <div style="display:flex;flex-direction:column;gap:20px;min-width:0;">
+        <!-- Best-selling Products -->
+        <div class="card-panel">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;">
+            <h2 style="font-size:17px;font-weight:800;margin:0;">Best-selling products</h2>
+            <a href="/admin/products" data-nav style="font-size:12px;color:var(--rose-deep);font-weight:700;">View all &gt;</a>
           </div>
-          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding-bottom:8px;border-bottom:1px solid var(--border-warm);">
-            <span>Out of stock SKUs</span><strong style="color:var(--status-alert-text);flex-shrink:0;">${k.out_of_stock_skus_count || 0}</strong>
-          </div>
-          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding-bottom:8px;border-bottom:1px solid var(--border-warm);">
-            <span>Active sellable SKUs</span><strong style="flex-shrink:0;">${k.active_skus_count || 0}</strong>
-          </div>
-          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
-            <span>Unconfirmed draft references (REF-01..12)</span><strong style="flex-shrink:0;">${k.draft_references_count || 0}</strong>
+          ${(data.top_products || []).length === 0 ? `
+            <p style="font-size:13px;color:var(--text-muted);margin:0;">No confirmed product sales in this period.</p>
+          ` : `
+            <div style="display:flex;flex-direction:column;gap:10px;">
+              ${data.top_products.map((tp) => `
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--bg-offwhite);border-radius:var(--radius-sm);font-size:13px;">
+                  <div>
+                    <strong>${escapeHtml(tp.title)}</strong>
+                    <div style="font-size:11.5px;color:var(--text-muted);">SKU: ${escapeHtml(tp.sku)} · Units: ${tp.units_sold}</div>
+                  </div>
+                  <strong>${escapeHtml(tp.revenue_formatted)}</strong>
+                </div>
+              `).join('')}
+            </div>
+          `}
+        </div>
+
+        <!-- Inventory Snapshot -->
+        <div class="card-panel">
+          <h2 style="font-size:17px;font-weight:800;margin:0 0 12px;">Inventory snapshot</h2>
+          <div style="display:flex;flex-direction:column;gap:12px;font-size:14px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding-bottom:8px;border-bottom:1px solid var(--border-warm);">
+              <span>Low stock SKUs</span><strong style="color:var(--rose-deep);flex-shrink:0;">${k.low_stock_skus_count || 0}</strong>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding-bottom:8px;border-bottom:1px solid var(--border-warm);">
+              <span>Out of stock SKUs</span><strong style="color:var(--status-alert-text);flex-shrink:0;">${k.out_of_stock_skus_count || 0}</strong>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding-bottom:8px;border-bottom:1px solid var(--border-warm);">
+              <span>Active sellable SKUs</span><strong style="flex-shrink:0;">${k.active_skus_count || 0}</strong>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
+              <span>Unconfirmed draft references (REF-01..12)</span><strong style="flex-shrink:0;">${k.draft_references_count || 0}</strong>
+            </div>
           </div>
         </div>
       </div>
