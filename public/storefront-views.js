@@ -270,7 +270,9 @@ export function renderHomePage() {
       ${newArr.visible !== false ? `
         <section id="new-arrivals" class="new-arrivals-section" aria-label="New Arrivals">
           <div class="new-arrivals-inner">
-            <h2 class="new-arrivals-heading">${escapeHtml(newArr.heading || 'NEW ARRIVALS')}</h2>
+            <h2 class="new-arrivals-heading">
+              <a href="/new-arrivals" data-nav style="color:inherit;text-decoration:none;">${escapeHtml(newArr.heading || 'NEW ARRIVALS')}</a>
+            </h2>
             <div class="new-arrivals-grid">
               ${newArrivalProducts.map((p) => `
                 <article class="new-arrival-card">
@@ -388,7 +390,26 @@ export function renderShopOrCollectionPage({ mode = 'shop', categorySlug = '', q
   const sort = queryParams.get('sort') || 'featured';
   const page = Math.max(1, Number(queryParams.get('page') || 1));
 
-  let filtered = allProducts.filter((p) => {
+  let sourceProducts = allProducts;
+  if (mode === 'new-arrivals') {
+    const newArr = sf?.content?.N01_N03 || {};
+    const selectedRefs = Array.isArray(newArr.selected_references) && newArr.selected_references.length > 0
+      ? newArr.selected_references
+      : ['REF-08', 'REF-01', 'REF-09'];
+    const pinned = selectedRefs
+      .map((ref) => allProducts.find((p) => p.reference_id === ref || p.slug === ref))
+      .filter(Boolean);
+    const pinnedIds = new Set(pinned.map((p) => p.id));
+    const newlyAdded = allProducts.filter(
+      (p) => !p.is_demo && !pinnedIds.has(p.id) && (!p.reference_id || !/^REF-(0[1-9]|1[0-2])$/i.test(p.reference_id))
+    );
+    sourceProducts = [...pinned, ...newlyAdded];
+    if (sourceProducts.length === 0) {
+      sourceProducts = allProducts.slice(0, 6);
+    }
+  }
+
+  let filtered = sourceProducts.filter((p) => {
     if (activeCat && p.category_slug !== activeCat) return false;
     if (activeBrand && p.brand.toLowerCase() !== activeBrand.toLowerCase()) return false;
     if (activeColour) {
@@ -420,15 +441,23 @@ export function renderShopOrCollectionPage({ mode = 'shop', categorySlug = '', q
   const catInfo = (sf?.categories || []).find((c) => c.slug === activeCat);
   const pageHeading = mode === 'search'
     ? (q ? `Search: "${q}"` : 'SEARCH')
-    : catInfo
-      ? catInfo.name.toUpperCase()
-      : 'SHOP';
+    : mode === 'new-arrivals'
+      ? 'NEW ARRIVALS'
+      : catInfo
+        ? catInfo.name.toUpperCase()
+        : 'SHOP';
 
-  const brands = Array.from(new Set(allProducts.filter((p) => !activeCat || p.category_slug === activeCat).map((p) => p.brand)));
-  const colours = Array.from(new Set(allProducts.filter((p) => !activeCat || p.category_slug === activeCat).map((p) => p.reference_colour_description).filter(Boolean)));
+  const brands = Array.from(new Set(sourceProducts.filter((p) => !activeCat || p.category_slug === activeCat).map((p) => p.brand)));
+  const colours = Array.from(new Set(sourceProducts.filter((p) => !activeCat || p.category_slug === activeCat).map((p) => p.reference_colour_description).filter(Boolean)));
+
+  const currentHeaderPath = mode === 'new-arrivals'
+    ? '/new-arrivals'
+    : mode === 'collection'
+      ? `/collections/${activeCat}`
+      : '/shop';
 
   return `
-    ${renderStorefrontHeader(mode === 'collection' ? `/collections/${activeCat}` : '/shop')}
+    ${renderStorefrontHeader(currentHeaderPath)}
     <main id="main-content" class="page-container">
       <div class="shop-header-bar">
         <div>

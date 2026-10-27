@@ -131,7 +131,7 @@ function openMobileMenuDrawer() {
           <a href="/shop" data-nav class="side-nav-item ${currentPath.startsWith('/shop') ? 'active' : ''}">
             <span>Shop All</span>
           </a>
-          <a href="/#new-arrivals" data-nav class="side-nav-item">
+          <a href="/new-arrivals" data-nav class="side-nav-item ${currentPath === '/new-arrivals' || currentPath === '/collections/new-arrivals' ? 'active' : ''}">
             <span>New arrivals</span>
             <span class="side-nav-badge">NEW</span>
           </a>
@@ -340,6 +340,11 @@ export async function renderRoute() {
   // =========================================================================
   if (pathname === '/') {
     appEl.innerHTML = renderHomePage();
+    return;
+  }
+
+  if (pathname === '/new-arrivals' || pathname === '/collections/new-arrivals') {
+    appEl.innerHTML = renderShopOrCollectionPage({ mode: 'new-arrivals', queryParams: params });
     return;
   }
 
@@ -581,7 +586,8 @@ document.addEventListener('click', async (e) => {
       return;
     }
     if (action === 'clear-shop-filters') {
-      const path = window.location.pathname.startsWith('/collections/') ? window.location.pathname : '/shop';
+      const p = window.location.pathname;
+      const path = (p.startsWith('/collections/') || p === '/new-arrivals') ? p : '/shop';
       await navigateTo(path);
       return;
     }
@@ -701,6 +707,13 @@ document.addEventListener('click', async (e) => {
     const val = filterBtn.getAttribute('data-filter-val');
     const urlObj = new URL(window.location.href);
     if (key === 'category') {
+      if (urlObj.pathname === '/new-arrivals' || urlObj.pathname === '/collections/new-arrivals') {
+        if (val) urlObj.searchParams.set('category', val);
+        else urlObj.searchParams.delete('category');
+        urlObj.searchParams.delete('page');
+        await navigateTo(urlObj.pathname + urlObj.search);
+        return;
+      }
       if (val) {
         await navigateTo(`/collections/${encodeURIComponent(val)}`);
       } else {
