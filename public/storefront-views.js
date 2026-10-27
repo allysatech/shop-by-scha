@@ -1602,33 +1602,9 @@ export function renderHelpPolicyPage(pageKey = 'about') {
     ? store.business_address
     : 'Bangsar, 59100 Kuala Lumpur, Wilayah Persekutuan Kuala Lumpur, Malaysia';
 
-  const navSections = [
-    { key: 'about', label: 'About SCHA' },
-    { key: 'shipping', label: 'Shipping & Delivery' },
-    { key: 'returns', label: 'Returns & Refunds' },
-    { key: 'faq', label: 'FAQ' },
-    { key: 'contact', label: 'Contact Care' },
-    { key: 'terms', label: 'Terms' },
-    { key: 'privacy', label: 'Privacy' }
-  ];
-
   return `
     ${renderStorefrontHeader(`/help/${pageKey}`)}
     <main id="main-content" class="page-container" style="max-width:1180px;">
-      <!-- Section Navigation Bar -->
-      <nav aria-label="Page sections" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:28px;padding:12px 16px;background:var(--bg-white);border:1px solid var(--border-warm);border-radius:var(--radius-lg);box-shadow:var(--shadow-soft);">
-        ${navSections.map((sec) => `
-          <a
-            href="/help/${sec.key}"
-            data-nav
-            class="btn-capsule-secondary"
-            style="padding:8px 16px;font-size:12.5px;min-height:38px;${pageKey === sec.key ? 'background:var(--pink-soft);border-color:var(--rose-deep);color:var(--rose-deep);font-weight:700;' : ''}"
-          >
-            ${escapeHtml(sec.label)}
-          </a>
-        `).join('')}
-      </nav>
-
       <!-- SECTION 1: ABOUT SHOP BY SCHA -->
       <section id="help-section-about" class="card-panel" style="padding:clamp(24px,4vw,44px);margin-bottom:28px;background:linear-gradient(180deg,#FFFFFF 0%,#FBF6F8 100%);">
         <div class="checkout-grid" style="align-items:center;gap:32px;">
