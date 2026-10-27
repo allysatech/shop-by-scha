@@ -1588,28 +1588,289 @@ export function renderCustomerAccountPage({ tab = 'orders', orders = [], address
 }
 
 export function renderHelpPolicyPage(pageKey = 'about') {
-  const policies = state.storefront?.store?.policies || {};
-  const store=state.storefront?.store || {};
-  let entry = policies[pageKey] || {title:pageKey.charAt(0).toUpperCase()+pageKey.slice(1),body:'Please contact us for more information before ordering.'};
-  if(pageKey==='contact') entry={title:'Contact SCHA',body:[store.support_email,store.support_phone,store.support_hours,store.business_address].filter(v=>v && !/To confirm|configure/i.test(v)).join('\n') || 'Our contact details will be available soon.'};
-  if(pageKey==='about')entry={title:'JUST SCHA',body:[store.founder_story || 'An edit of eyewear, bags, beauty and footwear, selected with a little personality.',store.business_identity,store.sourcing_info].filter(Boolean).join('\n\n')};
-  if(/configured return|to configure|demo|wireframe/i.test(entry.body||''))entry={...entry,body:'Please contact us to confirm these details before placing an order.'};
+  const store = state.storefront?.store || {};
+  const supportEmail = (store.support_email && !/To confirm|configure/i.test(store.support_email))
+    ? store.support_email
+    : 'care@shopbyscha.my';
+  const supportPhone = (store.support_phone && !/To confirm|configure/i.test(store.support_phone))
+    ? store.support_phone
+    : '+60 3-2780 9120';
+  const supportHours = (store.support_hours && !/To confirm|configure/i.test(store.support_hours))
+    ? store.support_hours
+    : 'Monday – Saturday, 10:00 AM – 6:00 PM (MYT)';
+  const businessAddress = (store.business_address && !/To confirm|configure/i.test(store.business_address))
+    ? store.business_address
+    : 'Bangsar, 59100 Kuala Lumpur, Wilayah Persekutuan Kuala Lumpur, Malaysia';
+
+  const navSections = [
+    { key: 'about', label: 'About SCHA' },
+    { key: 'shipping', label: 'Shipping & Delivery' },
+    { key: 'returns', label: 'Returns & Refunds' },
+    { key: 'faq', label: 'FAQ' },
+    { key: 'contact', label: 'Contact Care' },
+    { key: 'terms', label: 'Terms' },
+    { key: 'privacy', label: 'Privacy' }
+  ];
 
   return `
     ${renderStorefrontHeader(`/help/${pageKey}`)}
-    <main id="main-content" class="page-container" style="max-width:860px;">
-      <div class="card-panel">
-        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;">
-          ${['about', 'shipping', 'returns', 'contact', 'faq', 'terms', 'privacy'].map((k) => `
-            <a href="/help/${k}" data-nav class="btn-capsule-secondary" style="padding:6px 14px;font-size:12.5px;text-transform:capitalize;${pageKey === k ? 'background:var(--pink-soft);border-color:var(--rose-deep);color:var(--rose-deep);' : ''}">
-              ${k}
+    <main id="main-content" class="page-container" style="max-width:1180px;">
+      <!-- Section Navigation Bar -->
+      <nav aria-label="Page sections" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:28px;padding:12px 16px;background:var(--bg-white);border:1px solid var(--border-warm);border-radius:var(--radius-lg);box-shadow:var(--shadow-soft);">
+        ${navSections.map((sec) => `
+          <a
+            href="/help/${sec.key}"
+            data-nav
+            class="btn-capsule-secondary"
+            style="padding:8px 16px;font-size:12.5px;min-height:38px;${pageKey === sec.key ? 'background:var(--pink-soft);border-color:var(--rose-deep);color:var(--rose-deep);font-weight:700;' : ''}"
+          >
+            ${escapeHtml(sec.label)}
+          </a>
+        `).join('')}
+      </nav>
+
+      <!-- SECTION 1: ABOUT SHOP BY SCHA -->
+      <section id="help-section-about" class="card-panel" style="padding:clamp(24px,4vw,44px);margin-bottom:28px;background:linear-gradient(180deg,#FFFFFF 0%,#FBF6F8 100%);">
+        <div class="checkout-grid" style="align-items:center;gap:32px;">
+          <div>
+            <span class="chrome-pill-tag" style="margin-bottom:14px;">EST. KUALA LUMPUR · CURATED EDIT</span>
+            <h1 class="page-title" style="font-size:clamp(2rem,4vw,3rem);line-height:1.05;margin:0 0 16px;letter-spacing:-0.03em;">
+              JUST SCHA
+            </h1>
+            <p style="font-size:16px;font-weight:600;color:var(--charcoal);line-height:1.6;margin:0 0 14px;">
+              ${escapeHtml(store.founder_story || 'An edit of eyewear, bags, beauty and footwear, selected with a little personality.')}
+            </p>
+            <p style="font-size:14.5px;color:var(--text-muted);line-height:1.75;margin:0 0 22px;">
+              Shop by SCHA brings together statement silhouettes and daily essentials — from sculptural top-handle bags and bold acetate frames to soft-focus complexion icons and pastel low-profile sneakers. Every piece in our edit is curated in considered quantities for clients across Malaysia.
+            </p>
+            <div style="display:flex;flex-wrap:wrap;gap:12px;">
+              <a href="/shop" data-nav class="btn-capsule-primary" style="min-width:auto;padding:12px 26px;">Explore the Catalogue</a>
+              <a href="/collections" data-nav class="btn-capsule-secondary" style="padding:12px 22px;">View 4 Collections</a>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+            <a href="/collections/bags" data-nav style="background:var(--bg-white);border:1px solid var(--border-warm);border-radius:var(--radius-md);padding:16px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;">
+              <img src="/images/08_jacquemus_pink_flap_handbag.png" alt="Bags Edit" style="height:110px;width:100%;object-fit:contain;" loading="lazy" />
+              <strong style="font-size:13.5px;">Bags</strong>
+              <span style="font-size:11.5px;color:var(--text-muted);">Top-handle &amp; Flap Icons</span>
             </a>
-          `).join('')}
+            <a href="/collections/eyewear" data-nav style="background:var(--bg-white);border:1px solid var(--border-warm);border-radius:var(--radius-md);padding:16px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;">
+              <img src="/images/01_gentle_monster_black_sunglasses.png" alt="Eyewear Edit" style="height:110px;width:100%;object-fit:contain;" loading="lazy" />
+              <strong style="font-size:13.5px;">Eyewear</strong>
+              <span style="font-size:11.5px;color:var(--text-muted);">Sculptural &amp; Metallic Frames</span>
+            </a>
+            <a href="/collections/beauty" data-nav style="background:var(--bg-white);border:1px solid var(--border-warm);border-radius:var(--radius-md);padding:16px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;">
+              <img src="/images/10_charlotte_tilbury_airbrush_flawless_finish_powder.png" alt="Beauty Edit" style="height:110px;width:100%;object-fit:contain;" loading="lazy" />
+              <strong style="font-size:13.5px;">Beauty</strong>
+              <span style="font-size:11.5px;color:var(--text-muted);">Complexion &amp; Lip Edit</span>
+            </a>
+            <a href="/collections/footwear" data-nav style="background:var(--bg-white);border:1px solid var(--border-warm);border-radius:var(--radius-md);padding:16px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;">
+              <img src="/images/12_onitsuka_tiger_pink_sneakers.png" alt="Footwear Edit" style="height:110px;width:100%;object-fit:contain;" loading="lazy" />
+              <strong style="font-size:13.5px;">Footwear</strong>
+              <span style="font-size:11.5px;color:var(--text-muted);">Pastel Everyday Sneakers</span>
+            </a>
+          </div>
         </div>
-        <h1 class="page-title" style="font-size:28px;margin-bottom:14px;">${escapeHtml(entry.title)}</h1>
-        <div style="font-size:14.5px;line-height:1.75;color:var(--charcoal);white-space:pre-line;">
-          ${escapeHtml(entry.body)}
+
+        <!-- 3 Brand Pillars -->
+        <div class="form-grid-3" style="margin-top:28px;padding-top:24px;border-top:1px solid var(--border-warm);">
+          <div style="background:var(--bg-white);padding:18px;border-radius:var(--radius-md);border:1px solid var(--border-warm);">
+            <span class="badge badge-ref" style="margin-bottom:8px;">01 · CURATION</span>
+            <h3 style="font-size:15.5px;font-weight:800;margin:0 0 6px;">Authentic &amp; Inspected</h3>
+            <p style="font-size:13px;color:var(--text-muted);margin:0;line-height:1.6;">
+              Every item is individually inspected for colour accuracy, hardware finish, and packaging integrity prior to dispatch.
+            </p>
+          </div>
+          <div style="background:var(--bg-white);padding:18px;border-radius:var(--radius-md);border:1px solid var(--border-warm);">
+            <span class="badge badge-ref" style="margin-bottom:8px;">02 · CHECKOUT</span>
+            <h3 style="font-size:15.5px;font-weight:800;margin:0 0 6px;">DuitNow QR &amp; Stock Hold</h3>
+            <p style="font-size:13px;color:var(--text-muted);margin:0;line-height:1.6;">
+              Your selected SKU is reserved when you place an order while our team verifies your DuitNow QR payment receipt.
+            </p>
+          </div>
+          <div style="background:var(--bg-white);padding:18px;border-radius:var(--radius-md);border:1px solid var(--border-warm);">
+            <span class="badge badge-ref" style="margin-bottom:8px;">03 · DISPATCH</span>
+            <h3 style="font-size:15.5px;font-weight:800;margin:0 0 6px;">Nationwide Tracked Delivery</h3>
+            <p style="font-size:13px;color:var(--text-muted);margin:0;line-height:1.6;">
+              Tracked door-to-door delivery across Peninsular Malaysia, Sabah, Sarawak, and Labuan with live waybill updates.
+            </p>
+          </div>
         </div>
+      </section>
+
+      <!-- SECTION 2: SHIPPING & DELIVERY -->
+      <section id="help-section-shipping" class="card-panel" style="padding:clamp(22px,3.5vw,36px);margin-bottom:28px;">
+        <div style="margin-bottom:20px;">
+          <span class="badge badge-ref" style="margin-bottom:8px;">DELIVERY POLICY</span>
+          <h2 class="page-title" style="font-size:clamp(1.45rem,2.6vw,1.9rem);margin:0 0 6px;">Shipping &amp; Delivery</h2>
+          <p style="font-size:14px;color:var(--text-muted);margin:0;">
+            All orders are packed in protective boutique packaging and shipped from Kuala Lumpur once payment is confirmed.
+          </p>
+        </div>
+
+        <div class="form-grid-2" style="margin-bottom:20px;">
+          <div style="background:var(--bg-offwhite);padding:20px;border-radius:var(--radius-md);border:1px solid var(--border-warm);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+              <strong style="font-size:16px;">West Malaysia (Peninsular)</strong>
+              <span class="badge badge-paid">RM8.00 – RM18.00</span>
+            </div>
+            <p style="font-size:13.5px;color:var(--text-muted);margin:0 0 10px;line-height:1.6;">
+              Covers Kuala Lumpur, Selangor, Pulau Pinang, Johor, Perak, Melaka, Negeri Sembilan, Pahang, Kedah, Kelantan, Terengganu, Perlis, and Putrajaya.
+            </p>
+            <div style="font-size:12.5px;font-weight:700;color:var(--charcoal);">
+              Estimated transit: 1 – 3 working days after dispatch
+            </div>
+          </div>
+
+          <div style="background:var(--bg-offwhite);padding:20px;border-radius:var(--radius-md);border:1px solid var(--border-warm);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+              <strong style="font-size:16px;">East Malaysia (Sabah, Sarawak &amp; Labuan)</strong>
+              <span class="badge badge-paid">RM18.00</span>
+            </div>
+            <p style="font-size:13.5px;color:var(--text-muted);margin:0 0 10px;line-height:1.6;">
+              Tracked air-freight courier service to Kota Kinabalu, Kuching, Miri, Sibu, Sandakan, Bintulu, Labuan, and surrounding towns.
+            </p>
+            <div style="font-size:12.5px;font-weight:700;color:var(--charcoal);">
+              Estimated transit: 3 – 5 working days after dispatch
+            </div>
+          </div>
+        </div>
+
+        <div style="background:var(--pink-subtle);padding:16px 20px;border-radius:var(--radius-md);border:1px solid var(--pink-soft);font-size:13.5px;line-height:1.65;">
+          <strong>Supported Courier Partners:</strong> PosLaju Malaysia, J&amp;T Express, NinjaVan Malaysia, DHL eCommerce, SPX Express, and GDEX. As soon as your parcel is handed over to the courier, your waybill number and direct tracking link appear on your Order Status page.
+        </div>
+      </section>
+
+      <!-- SECTION 3: RETURNS, EXCHANGES & REFUNDS -->
+      <section id="help-section-returns" class="card-panel" style="padding:clamp(22px,3.5vw,36px);margin-bottom:28px;">
+        <div style="margin-bottom:20px;">
+          <span class="badge badge-ref" style="margin-bottom:8px;">RETURNS &amp; REFUNDS</span>
+          <h2 class="page-title" style="font-size:clamp(1.45rem,2.6vw,1.9rem);margin:0 0 6px;">Returns, Exchanges &amp; Refund Policy</h2>
+          <p style="font-size:14px;color:var(--text-muted);margin:0;">
+            We want you to love every piece in your edit. If something is not quite right, here is how returns work.
+          </p>
+        </div>
+
+        <div class="form-grid-3">
+          <div style="background:var(--bg-offwhite);padding:18px;border-radius:var(--radius-md);border:1px solid var(--border-warm);">
+            <h3 style="font-size:15px;font-weight:800;margin:0 0 8px;color:var(--rose-deep);">7-Day Return Window</h3>
+            <p style="font-size:13px;color:var(--text-muted);margin:0;line-height:1.65;">
+              Eligible items may be requested for return within <strong>7 calendar days</strong> of delivery. Items must be unworn, unused, and returned in original boutique boxes, dust bags, and protective tags.
+            </p>
+          </div>
+          <div style="background:var(--bg-offwhite);padding:18px;border-radius:var(--radius-md);border:1px solid var(--border-warm);">
+            <h3 style="font-size:15px;font-weight:800;margin:0 0 8px;color:var(--rose-deep);">Hygiene &amp; Beauty Items</h3>
+            <p style="font-size:13px;color:var(--text-muted);margin:0;line-height:1.65;">
+              For hygiene protection, beauty and cosmetic products (powders, lipsticks) cannot be returned once opened or tested, unless the item arrived damaged or defective upon delivery.
+            </p>
+          </div>
+          <div style="background:var(--bg-offwhite);padding:18px;border-radius:var(--radius-md);border:1px solid var(--border-warm);">
+            <h3 style="font-size:15px;font-weight:800;margin:0 0 8px;color:var(--rose-deep);">Direct Bank Refunds</h3>
+            <p style="font-size:13px;color:var(--text-muted);margin:0;line-height:1.65;">
+              Once a returned item is inspected and approved, refunds are transferred directly to your Malaysian bank account in MYR within <strong>3 – 5 business days</strong> with a recorded bank reference.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 4: FREQUENTLY ASKED QUESTIONS (FAQ) -->
+      <section id="help-section-faq" class="card-panel" style="padding:clamp(22px,3.5vw,36px);margin-bottom:28px;">
+        <div style="margin-bottom:20px;">
+          <span class="badge badge-ref" style="margin-bottom:8px;">HELP CENTRE</span>
+          <h2 class="page-title" style="font-size:clamp(1.45rem,2.6vw,1.9rem);margin:0 0 6px;">Frequently Asked Questions</h2>
+          <p style="font-size:14px;color:var(--text-muted);margin:0;">
+            Quick answers to common questions about ordering, DuitNow QR payments, and catalogue pieces.
+          </p>
+        </div>
+
+        <div class="form-grid-2">
+          <div style="background:var(--bg-offwhite);padding:18px;border-radius:var(--radius-md);border:1px solid var(--border-warm);">
+            <h3 style="font-size:14.5px;font-weight:800;margin:0 0 6px;">How do I pay using DuitNow QR?</h3>
+            <p style="font-size:13px;color:var(--text-muted);margin:0;line-height:1.6;">
+              After placing your order at checkout, scan the official Shop by SCHA DuitNow QR code using any Malaysian banking app or e-wallet, then upload your payment receipt screenshot and reference number on the order page.
+            </p>
+          </div>
+          <div style="background:var(--bg-offwhite);padding:18px;border-radius:var(--radius-md);border:1px solid var(--border-warm);">
+            <h3 style="font-size:14.5px;font-weight:800;margin:0 0 6px;">Is my item reserved while my payment is reviewed?</h3>
+            <p style="font-size:13px;color:var(--text-muted);margin:0;line-height:1.6;">
+              Yes. When you place an order, stock is immediately held for your order and remains protected while you upload your receipt and while our team verifies the bank transaction.
+            </p>
+          </div>
+          <div style="background:var(--bg-offwhite);padding:18px;border-radius:var(--radius-md);border:1px solid var(--border-warm);">
+            <h3 style="font-size:14.5px;font-weight:800;margin:0 0 6px;">Why do some items show "Price to confirm"?</h3>
+            <p style="font-size:13px;color:var(--text-muted);margin:0;line-height:1.6;">
+              Pieces marked <em>Price to confirm</em> are upcoming editorial references in our lookbook preview. Once final MYR pricing and stock quantities are confirmed, they become available to add to bag.
+            </p>
+          </div>
+          <div style="background:var(--bg-offwhite);padding:18px;border-radius:var(--radius-md);border:1px solid var(--border-warm);">
+            <h3 style="font-size:14.5px;font-weight:800;margin:0 0 6px;">How can I track a guest order?</h3>
+            <p style="font-size:13px;color:var(--text-muted);margin:0;line-height:1.6;">
+              Visit the <a href="/order/confirmation" data-nav style="color:var(--rose-deep);font-weight:700;">Track Guest Order</a> page and enter your Order Number (e.g. <code>SCHA-...</code>) along with the email address used at checkout.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 5: CONTACT & CLIENT CARE -->
+      <section id="help-section-contact" class="card-panel" style="padding:clamp(22px,3.5vw,36px);margin-bottom:28px;">
+        <div class="checkout-grid" style="align-items:center;gap:24px;">
+          <div>
+            <span class="badge badge-ref" style="margin-bottom:8px;">CLIENT CARE</span>
+            <h2 class="page-title" style="font-size:clamp(1.45rem,2.6vw,1.9rem);margin:0 0 8px;">Contact Shop by SCHA</h2>
+            <p style="font-size:14px;color:var(--text-muted);margin:0 0 18px;line-height:1.65;">
+              Need help with sizing, shade matching, payment receipt verification, or a delivery update? Reach out to our Kuala Lumpur client care team with your order number.
+            </p>
+            <div style="display:flex;flex-wrap:wrap;gap:10px;">
+              <a href="/order/confirmation" data-nav class="btn-capsule-primary" style="min-width:auto;padding:10px 22px;">Track an Order</a>
+              <a href="mailto:${escapeHtml(supportEmail)}" class="btn-capsule-secondary" style="padding:10px 20px;">Email Client Care</a>
+            </div>
+          </div>
+
+          <div class="form-grid-2" style="gap:12px;">
+            <div style="background:var(--bg-offwhite);padding:16px;border-radius:var(--radius-md);border:1px solid var(--border-warm);">
+              <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:4px;">Email</div>
+              <div style="font-size:14px;font-weight:700;color:var(--rose-deep);">${escapeHtml(supportEmail)}</div>
+            </div>
+            <div style="background:var(--bg-offwhite);padding:16px;border-radius:var(--radius-md);border:1px solid var(--border-warm);">
+              <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:4px;">Phone / WhatsApp</div>
+              <div style="font-size:14px;font-weight:700;color:var(--charcoal);">${escapeHtml(supportPhone)}</div>
+            </div>
+            <div style="background:var(--bg-offwhite);padding:16px;border-radius:var(--radius-md);border:1px solid var(--border-warm);">
+              <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:4px;">Support Hours</div>
+              <div style="font-size:13px;font-weight:600;color:var(--charcoal);">${escapeHtml(supportHours)}</div>
+            </div>
+            <div style="background:var(--bg-offwhite);padding:16px;border-radius:var(--radius-md);border:1px solid var(--border-warm);">
+              <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:4px;">Location</div>
+              <div style="font-size:13px;font-weight:600;color:var(--charcoal);">${escapeHtml(businessAddress)}</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 6: TERMS OF SERVICE & PRIVACY POLICY -->
+      <div class="form-grid-2">
+        <section id="help-section-terms" class="card-panel" style="padding:clamp(20px,3vw,30px);">
+          <span class="badge badge-ref" style="margin-bottom:8px;">LEGAL</span>
+          <h2 style="font-size:19px;font-weight:800;margin:0 0 10px;">Terms of Service</h2>
+          <p style="font-size:13.5px;color:var(--text-muted);line-height:1.7;margin:0 0 10px;">
+            All prices on Shop by SCHA are listed in <strong>Malaysian Ringgit (MYR)</strong>. Draft lookbook references marked <em>Price to confirm</em> are displayed for editorial preview and cannot be purchased until published with confirmed inventory.
+          </p>
+          <p style="font-size:13.5px;color:var(--text-muted);line-height:1.7;margin:0;">
+            Orders placed via DuitNow QR are confirmed once our administrator verifies the received transaction in the merchant bank statement. Unpaid orders without a receipt submission before the payment deadline automatically release their stock reservation.
+          </p>
+        </section>
+
+        <section id="help-section-privacy" class="card-panel" style="padding:clamp(20px,3vw,30px);">
+          <span class="badge badge-ref" style="margin-bottom:8px;">PDPA MALAYSIA</span>
+          <h2 style="font-size:19px;font-weight:800;margin:0 0 10px;">Privacy Policy</h2>
+          <p style="font-size:13.5px;color:var(--text-muted);line-height:1.7;margin:0 0 10px;">
+            In compliance with the <strong>Personal Data Protection Act 2010 (PDPA Malaysia)</strong>, we collect only your name, email, phone number, Malaysian delivery address, and uploaded DuitNow payment receipts strictly for order fulfilment and customer support.
+          </p>
+          <p style="font-size:13.5px;color:var(--text-muted);line-height:1.7;margin:0;">
+            Uploaded payment receipts are stored in private access-controlled storage and are never publicly accessible. Marketing newsletter emails are sent only with your explicit opt-in consent and can be unsubscribed at any time.
+          </p>
+        </section>
       </div>
     </main>
     ${renderStorefrontFooter()}

@@ -62,6 +62,14 @@ export async function navigateTo(url, replace = false) {
       return;
     }
   }
+  if (String(url).startsWith('/help/') && String(url) !== '/help/about') {
+    const helpKey = String(url).slice('/help/'.length).split(/[?#]/)[0];
+    const targetSec = document.getElementById(`help-section-${helpKey}`);
+    if (targetSec) {
+      targetSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  }
   const saved=Number(sessionStorage.getItem('scha:scroll:'+url)||0);
   window.scrollTo({ top: saved, behavior: 'instant' });
 }
@@ -503,6 +511,12 @@ export async function renderRoute() {
   if (pathname.startsWith('/help/')) {
     const pageKey = pathname.slice('/help/'.length) || 'about';
     appEl.innerHTML = renderHelpPolicyPage(pageKey);
+    if (pageKey !== 'about') {
+      const targetSec = document.getElementById(`help-section-${pageKey}`);
+      if (targetSec) {
+        requestAnimationFrame(() => targetSec.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+      }
+    }
     return;
   }
 
