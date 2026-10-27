@@ -30,7 +30,7 @@ export function renderStorefrontHeader(currentPath = '/') {
     ` : ''}
     <header class="site-header">
       <div class="header-inner">
-        <div class="nav-left"><nav class="desktop-shop-nav" aria-label="Shop categories"><a href="/shop" data-nav>Shop All</a><a href="/collections/bags" data-nav>Bags</a><a href="/collections/eyewear" data-nav>Eyewear</a><a href="/collections/beauty" data-nav>Beauty</a><a href="/collections/footwear" data-nav>Footwear</a></nav>
+        <div class="nav-left">
           <button
             type="button"
             class="header-icon-btn side-menu-trigger"

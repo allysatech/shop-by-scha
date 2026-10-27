@@ -121,7 +121,7 @@ function openMobileMenuDrawer() {
             <span>Home</span>
           </a>
           <a href="/shop" data-nav class="side-nav-item ${currentPath.startsWith('/shop') ? 'active' : ''}">
-            <span>Shop</span>
+            <span>Shop All</span>
           </a>
           <a href="/#new-arrivals" data-nav class="side-nav-item">
             <span>New arrivals</span>
@@ -145,11 +145,11 @@ function openMobileMenuDrawer() {
               <a href="/collections" data-nav class="side-nav-dropdown-link ${currentPath === '/collections' ? 'active' : ''}">
                 <span>All Collections</span>
               </a>
-              <a href="/collections/eyewear" data-nav class="side-nav-dropdown-link ${currentPath === '/collections/eyewear' ? 'active' : ''}">
-                <span>Eyewear</span>
-              </a>
               <a href="/collections/bags" data-nav class="side-nav-dropdown-link ${currentPath === '/collections/bags' ? 'active' : ''}">
                 <span>Bags</span>
+              </a>
+              <a href="/collections/eyewear" data-nav class="side-nav-dropdown-link ${currentPath === '/collections/eyewear' ? 'active' : ''}">
+                <span>Eyewear</span>
               </a>
               <a href="/collections/beauty" data-nav class="side-nav-dropdown-link ${currentPath === '/collections/beauty' ? 'active' : ''}">
                 <span>Beauty</span>
