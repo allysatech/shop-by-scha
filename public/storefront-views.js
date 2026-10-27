@@ -1624,7 +1624,6 @@ export function renderHelpPolicyPage(pageKey = 'about') {
               </p>
               <div style="display:flex;flex-wrap:wrap;gap:12px;">
                 <a href="/shop" data-nav class="btn-capsule-primary" style="min-width:auto;padding:12px 26px;">Explore the Catalogue</a>
-                <a href="/collections" data-nav class="btn-capsule-secondary" style="padding:12px 22px;background:rgba(255,255,255,0.92);">View 4 Collections</a>
               </div>
             </div>
 
