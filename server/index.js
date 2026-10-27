@@ -139,10 +139,9 @@ async function mergeGuestCartIntoUserCart(guestCartId, userId) {
   return existingUserCart.id;
 }
 
-async function formatProductRow(p) {
+function buildProductObject(p, media, variantRows) {
   if (!p) return null;
-  const media = await db.prepare('SELECT * FROM product_media WHERE product_id = ? ORDER BY sort_order ASC, id ASC').all(p.id);
-  const variants = (await db.prepare('SELECT * FROM product_variants WHERE product_id = ? AND is_active = 1 ORDER BY id ASC').all(p.id)).map((v) => ({
+  const variants = (variantRows || []).map((v) => ({
     ...v,
     attributes: JSON.parse(v.attributes_json || '{}'),
     available: Math.max(0, Number(v.on_hand) - Number(v.reserved)),
@@ -207,6 +206,36 @@ async function formatProductRow(p) {
     created_at: p.created_at,
     updated_at: p.updated_at
   };
+}
+
+async function formatProductRow(p) {
+  if (!p) return null;
+  const [media, variantRows] = await Promise.all([
+    db.prepare('SELECT * FROM product_media WHERE product_id = ? ORDER BY sort_order ASC, id ASC').all(p.id),
+    db.prepare('SELECT * FROM product_variants WHERE product_id = ? AND is_active = 1 ORDER BY id ASC').all(p.id)
+  ]);
+  return buildProductObject(p, media, variantRows);
+}
+
+async function formatProductRows(rows) {
+  if (!rows || rows.length === 0) return [];
+  const [allMedia, allVariants] = await Promise.all([
+    db.prepare('SELECT * FROM product_media ORDER BY sort_order ASC, id ASC').all(),
+    db.prepare('SELECT * FROM product_variants WHERE is_active = 1 ORDER BY id ASC').all()
+  ]);
+  const mediaByProd = new Map();
+  for (const m of allMedia) {
+    const pid = Number(m.product_id);
+    if (!mediaByProd.has(pid)) mediaByProd.set(pid, []);
+    mediaByProd.get(pid).push(m);
+  }
+  const variantsByProd = new Map();
+  for (const v of allVariants) {
+    const pid = Number(v.product_id);
+    if (!variantsByProd.has(pid)) variantsByProd.set(pid, []);
+    variantsByProd.get(pid).push(v);
+  }
+  return rows.map((p) => buildProductObject(p, mediaByProd.get(Number(p.id)) || [], variantsByProd.get(Number(p.id)) || []));
 }
 
 async function canAccessOrder(req, urlObj, user, orderRow) {
@@ -522,31 +551,30 @@ async function handleApiRequest(req, res, urlObj) {
   if (pathname === '/api/storefront' && method === 'GET') {
     await sweepExpiredReservations();
     const isPreview = (urlObj.searchParams.get('preview')) === '1' && user && user.role === 'ADMIN';
-    const settingsRow = await db.prepare('SELECT * FROM store_settings WHERE id = 1').get();
-    const categories = await db.prepare('SELECT * FROM categories ORDER BY sort_order ASC').all();
-    const contentRows = await db.prepare('SELECT * FROM content_sections').all();
+    const [settingsRow, categories, contentRows, latestPaymentConfig, allProductRows] = await Promise.all([
+      db.prepare('SELECT * FROM store_settings WHERE id = 1').get(),
+      db.prepare('SELECT * FROM categories ORDER BY sort_order ASC').all(),
+      db.prepare('SELECT * FROM content_sections').all(),
+      db.prepare('SELECT * FROM payment_instruction_versions ORDER BY version_number DESC LIMIT 1').get(),
+      db.prepare(`
+        SELECT * FROM products
+        WHERE publish_status != 'archived'
+          AND duplicate_merged_into_id IS NULL
+        ORDER BY CASE WHEN is_demo = 0 THEN 0 ELSE 1 END, reference_order ASC, id ASC
+      `).all()
+    ]);
 
     const content = {};
     for (const row of contentRows) {
       content[row.section_key] = JSON.parse(isPreview ? row.draft_json : row.published_json);
     }
 
-    const latestPaymentConfig = await db.prepare('SELECT * FROM payment_instruction_versions ORDER BY version_number DESC LIMIT 1').get();
-
-    const allProductRows = await db.prepare(`
-      SELECT * FROM products
-      WHERE publish_status != 'archived'
-        AND duplicate_merged_into_id IS NULL
-      ORDER BY CASE WHEN is_demo = 0 THEN 0 ELSE 1 END, reference_order ASC, id ASC
-    `).all();
-
-    const formattedProducts = await Promise.all(allProductRows.
-    filter((p) => {
+    const visibleProductRows = allProductRows.filter((p) => {
       if (isPreview) return true;
       if (settingsRow.design_preview_enabled) return sandbox ? true : !p.is_demo;
       return !p.is_demo && p.publish_status === 'published';
-    }).map(
-      formatProductRow));
+    });
+    const formattedProducts = await formatProductRows(visibleProductRows);
 
     return sendJson(res, 200, {
       sandbox,
@@ -592,17 +620,18 @@ async function handleApiRequest(req, res, urlObj) {
     const colour = String((urlObj.searchParams.get('colour')) || '').trim().toLowerCase();
     const availability = String((urlObj.searchParams.get('availability')) || '').trim().toLowerCase();
     const sort = String((urlObj.searchParams.get('sort')) || 'featured').trim();
-    const settingsRow = await db.prepare('SELECT design_preview_enabled FROM store_settings WHERE id = 1').get();
+    const [settingsRow, rows] = await Promise.all([
+      db.prepare('SELECT design_preview_enabled FROM store_settings WHERE id = 1').get(),
+      db.prepare(`
+        SELECT * FROM products
+        WHERE publish_status != 'archived'
+          AND duplicate_merged_into_id IS NULL
+        ORDER BY CASE WHEN is_demo = 0 THEN 0 ELSE 1 END, reference_order ASC, id ASC
+      `).all()
+    ]);
     const designPreviewEnabled = Boolean(settingsRow?.design_preview_enabled);
 
-    const rows = await db.prepare(`
-      SELECT * FROM products
-      WHERE publish_status != 'archived'
-        AND duplicate_merged_into_id IS NULL
-      ORDER BY CASE WHEN is_demo = 0 THEN 0 ELSE 1 END, reference_order ASC, id ASC
-    `).all();
-
-    let list = (await Promise.all(rows.map(formatProductRow))).filter((p) => {
+    let list = (await formatProductRows(rows)).filter((p) => {
       if (!(user && user.role === 'ADMIN' && urlObj.searchParams.get('preview')==='1') && !sandbox && (p.is_demo || (!designPreviewEnabled && p.publish_status !== 'published'))) return false;
       if (category && p.category_slug !== category) return false;
       if (brand && p.brand.toLowerCase() !== brand) return false;
@@ -632,28 +661,32 @@ async function handleApiRequest(req, res, urlObj) {
 
   if (pathname.startsWith('/api/products/') && method === 'GET') {
     const slugOrRef = decodeURIComponent(pathname.slice('/api/products/'.length));
-    const settingsRow = await db.prepare('SELECT design_preview_enabled FROM store_settings WHERE id = 1').get();
+    const [settingsRow, row] = await Promise.all([
+      db.prepare('SELECT design_preview_enabled FROM store_settings WHERE id = 1').get(),
+      db.prepare(`
+        SELECT * FROM products
+        WHERE slug = ? OR reference_id = ? OR CAST(id AS TEXT) = ?
+        LIMIT 1
+      `).get(slugOrRef, slugOrRef.toUpperCase(), slugOrRef)
+    ]);
     const designPreviewEnabled = Boolean(settingsRow?.design_preview_enabled);
-    const row = await db.prepare(`
-      SELECT * FROM products
-      WHERE slug = ? OR reference_id = ? OR CAST(id AS TEXT) = ?
-      LIMIT 1
-    `).get(slugOrRef, slugOrRef.toUpperCase(), slugOrRef);
 
     if (!row || row.publish_status === 'archived' || !(user && user.role === 'ADMIN' && urlObj.searchParams.get('preview')==='1') && !sandbox && (row.is_demo || (!designPreviewEnabled && row.publish_status !== 'published'))) {
       return sendJson(res, 404, { error: 'Product not found.' });
     }
 
-    const product = await formatProductRow(row);
-    const relatedRows = await db.prepare(`
-      SELECT * FROM products
-      WHERE category_slug = ? AND id != ? AND publish_status != 'archived' AND duplicate_merged_into_id IS NULL
-      ORDER BY reference_order ASC LIMIT 4
-    `).all(row.category_slug, row.id);
+    const [product, relatedRows] = await Promise.all([
+      formatProductRow(row),
+      db.prepare(`
+        SELECT * FROM products
+        WHERE category_slug = ? AND id != ? AND publish_status != 'archived' AND duplicate_merged_into_id IS NULL
+        ORDER BY reference_order ASC LIMIT 4
+      `).all(row.category_slug, row.id)
+    ]);
 
     return sendJson(res, 200, {
       product,
-      related: await Promise.all(relatedRows.filter(r=>sandbox || (!r.is_demo && (designPreviewEnabled || r.publish_status==='published'))).map(formatProductRow))
+      related: await formatProductRows(relatedRows.filter(r=>sandbox || (!r.is_demo && (designPreviewEnabled || r.publish_status==='published'))))
     });
   }
 
@@ -1524,82 +1557,96 @@ async function handleApiRequest(req, res, urlObj) {
 
     // Confirmed sales = admin-confirmed paid amounts minus recorded completed refunds
     // Note: paid orders that are cancelled remain in received-payment totals until a completed refund is recorded!
-    const paidOrders = await db.prepare(`
-      SELECT * FROM orders
-      WHERE payment_status IN ('paid', 'refund_pending', 'partially_refunded', 'refunded')
-        AND substr(created_at, 1, 10) >= ?
-        AND substr(created_at, 1, 10) <= ?
-        ${demoFilterSql}
-      ORDER BY created_at DESC
-    `).all(dateFrom, dateTo);
+    const [
+      paidOrders,
+      pendingRefundsRow,
+      paymentsToReviewRow,
+      ordersToFulfilRow,
+      variants,
+      draftUnconfirmedRow,
+      recentOrderRows,
+      topProductRows
+    ] = await Promise.all([
+      db.prepare(`
+        SELECT * FROM orders
+        WHERE payment_status IN ('paid', 'refund_pending', 'partially_refunded', 'refunded')
+          AND substr(created_at, 1, 10) >= ?
+          AND substr(created_at, 1, 10) <= ?
+          ${demoFilterSql}
+        ORDER BY created_at DESC
+      `).all(dateFrom, dateTo),
+      db.prepare(`
+        SELECT COALESCE(SUM(mr.amount_minor), 0) AS total
+        FROM manual_refunds mr
+        JOIN orders o ON o.id = mr.order_id
+        WHERE mr.status = 'refund_pending' ${includeDemo ? '' : 'AND o.is_demo = 0'}
+      `).get(),
+      db.prepare(`
+        SELECT COUNT(*) AS c FROM orders
+        WHERE payment_status IN ('under_review', 'awaiting_payment', 'needs_resubmission')
+          ${demoFilterSql}
+      `).get(),
+      db.prepare(`
+        SELECT COUNT(*) AS c FROM orders
+        WHERE payment_status = 'paid'
+          AND fulfilment_status IN ('unfulfilled', 'processing')
+          ${demoFilterSql}
+      `).get(),
+      db.prepare(`
+        SELECT v.*, p.title AS product_title, p.reference_id
+        FROM product_variants v
+        JOIN products p ON p.id = v.product_id
+        WHERE v.is_active = 1 ${includeDemo ? '' : 'AND v.is_demo = 0'}
+      `).all(),
+      db.prepare("SELECT COUNT(*) AS c FROM products WHERE publish_status = 'draft' AND is_demo = 0").get(),
+      db.prepare(`
+        SELECT * FROM orders
+        WHERE 1=1 ${demoFilterSql}
+        ORDER BY created_at DESC, id DESC
+        LIMIT 8
+      `).all(),
+      db.prepare(`
+        SELECT oi.title_snapshot AS title, oi.sku_snapshot AS sku, oi.image_snapshot AS image_path,
+               SUM(oi.quantity) AS units_sold, SUM(oi.line_total_minor) AS revenue_minor
+        FROM order_items oi
+        JOIN orders o ON o.id = oi.order_id
+        WHERE o.payment_status IN ('paid', 'refund_pending', 'partially_refunded')
+          AND substr(o.created_at, 1, 10) >= ?
+          AND substr(o.created_at, 1, 10) <= ?
+          ${includeDemo ? '' : 'AND o.is_demo = 0'}
+        GROUP BY oi.sku_snapshot, oi.title_snapshot, oi.image_snapshot
+        ORDER BY units_sold DESC
+        LIMIT 5
+      `).all(dateFrom, dateTo)
+    ]);
 
     const grossPaidMinor = paidOrders.reduce((s, o) => s + Number(o.total_minor), 0);
     const completedRefundsMinor = paidOrders.reduce((s, o) => s + Number(o.refunded_minor || 0), 0);
     const confirmedSalesMinor = Math.max(0, grossPaidMinor - completedRefundsMinor);
 
-    const pendingRefundsMinor = (await db.prepare(`
-      SELECT COALESCE(SUM(mr.amount_minor), 0) AS total
-      FROM manual_refunds mr
-      JOIN orders o ON o.id = mr.order_id
-      WHERE mr.status = 'refund_pending' ${includeDemo ? '' : 'AND o.is_demo = 0'}
-    `).get()).total;
-
-    const paymentsToReviewCount = (await db.prepare(`
-      SELECT COUNT(*) AS c FROM orders
-      WHERE payment_status IN ('under_review', 'awaiting_payment', 'needs_resubmission')
-        ${demoFilterSql}
-    `).get()).c;
-
-    const ordersToFulfilCount = (await db.prepare(`
-      SELECT COUNT(*) AS c FROM orders
-      WHERE payment_status = 'paid'
-        AND fulfilment_status IN ('unfulfilled', 'processing')
-        ${demoFilterSql}
-    `).get()).c;
-
-    const variants = await db.prepare(`
-      SELECT v.*, p.title AS product_title, p.reference_id
-      FROM product_variants v
-      JOIN products p ON p.id = v.product_id
-      WHERE v.is_active = 1 ${includeDemo ? '' : 'AND v.is_demo = 0'}
-    `).all();
+    const pendingRefundsMinor = pendingRefundsRow.total;
+    const paymentsToReviewCount = paymentsToReviewRow.c;
+    const ordersToFulfilCount = ordersToFulfilRow.c;
 
     const lowStockSkus = variants.filter((v) => v.on_hand - v.reserved <= v.low_stock_threshold);
     const outOfStockSkus = variants.filter((v) => v.on_hand - v.reserved <= 0);
-    const draftUnconfirmedCount = (await db.prepare("SELECT COUNT(*) AS c FROM products WHERE publish_status = 'draft' AND is_demo = 0").get()).c;
+    const draftUnconfirmedCount = draftUnconfirmedRow.c;
 
-    const recentOrders = await Promise.all((await db.prepare(`
-      SELECT * FROM orders
-      WHERE 1=1 ${demoFilterSql}
-      ORDER BY created_at DESC, id DESC
-      LIMIT 8
-    `).all()).map(async (o) => await enrichOrder(o, true)));
+    const recentOrders = await Promise.all(recentOrderRows.map((o) => enrichOrder(o, true)));
 
     // Sales trend by date
     const byDateMap = new Map();
     for (const o of paidOrders) {
       const day = o.created_at.slice(0, 10);
       const net = Number(o.total_minor) - Number(o.refunded_minor || 0);
-      byDateMap.set(day, ((await byDateMap.get(day)) || 0) + net);
+      byDateMap.set(day, (byDateMap.get(day) || 0) + net);
     }
     const salesTrend = Array.from(byDateMap.entries()).
     sort((a, b) => a[0].localeCompare(b[0])).
     map(([date, minor]) => ({ date, amount_minor: minor, amount_formatted: formatMYR(minor) }));
 
     // Top products from confirmed orders
-    const topProducts = (await db.prepare(`
-      SELECT oi.title_snapshot AS title, oi.sku_snapshot AS sku, oi.image_snapshot AS image_path,
-             SUM(oi.quantity) AS units_sold, SUM(oi.line_total_minor) AS revenue_minor
-      FROM order_items oi
-      JOIN orders o ON o.id = oi.order_id
-      WHERE o.payment_status IN ('paid', 'refund_pending', 'partially_refunded')
-        AND substr(o.created_at, 1, 10) >= ?
-        AND substr(o.created_at, 1, 10) <= ?
-        ${includeDemo ? '' : 'AND o.is_demo = 0'}
-      GROUP BY oi.sku_snapshot, oi.title_snapshot, oi.image_snapshot
-      ORDER BY units_sold DESC
-      LIMIT 5
-    `).all(dateFrom, dateTo)).map((tp) => ({
+    const topProducts = topProductRows.map((tp) => ({
       ...tp,
       units_sold: Number(tp.units_sold || 0),
       revenue_minor: Number(tp.revenue_minor || 0),
@@ -1633,15 +1680,19 @@ async function handleApiRequest(req, res, urlObj) {
 
   // Admin Products CRUD
   if (pathname === '/api/admin/products' && method === 'GET') {
-    const rows = await db.prepare('SELECT * FROM products ORDER BY is_demo ASC, reference_order ASC, id ASC').all();
+    const [rows, orderRefRows] = await Promise.all([
+      db.prepare('SELECT * FROM products ORDER BY is_demo ASC, reference_order ASC, id ASC').all(),
+      db.prepare('SELECT product_id, COUNT(*) AS c FROM order_items WHERE product_id IS NOT NULL GROUP BY product_id').all()
+    ]);
+    const refMap = new Map();
+    for (const r of orderRefRows) {
+      refMap.set(Number(r.product_id), Number(r.c || 0));
+    }
+    const formattedList = await formatProductRows(rows);
     return sendJson(res, 200, {
-      products: await Promise.all(rows.map(async (r) => {
-        const formatted = await formatProductRow(r);
-        const orderRefs = (await db.prepare('SELECT COUNT(*) AS c FROM order_items WHERE product_id = ?').get(r.id)).c;
-        return {
-          ...formatted,
-          referenced_in_orders_count: orderRefs
-        };
+      products: formattedList.map((formatted) => ({
+        ...formatted,
+        referenced_in_orders_count: refMap.get(Number(formatted.id)) || 0
       }))
     });
   }
@@ -2116,32 +2167,32 @@ async function handleApiRequest(req, res, urlObj) {
   // Admin Inventory & Stock Movements
   if (pathname === '/api/admin/inventory' && method === 'GET') {
     await sweepExpiredReservations();
-    const variants = (await db.prepare(`
-      SELECT v.*, p.title AS product_title, p.reference_id, p.publish_status, p.category_slug
-      FROM product_variants v
-      JOIN products p ON p.id = v.product_id
-      ORDER BY v.is_demo ASC, v.sku ASC
-    `).all()).map((v) => ({
+    const [rawVariants, unconfirmedDrafts, movements] = await Promise.all([
+      db.prepare(`
+        SELECT v.*, p.title AS product_title, p.reference_id, p.publish_status, p.category_slug
+        FROM product_variants v
+        JOIN products p ON p.id = v.product_id
+        ORDER BY v.is_demo ASC, v.sku ASC
+      `).all(),
+      db.prepare(`
+        SELECT id, reference_id, title, category_slug, publish_status, stock_quantity, sellable_sku
+        FROM products
+        WHERE stock_quantity IS NULL
+        ORDER BY reference_order ASC
+      `).all(),
+      db.prepare(`
+        SELECT * FROM stock_movements
+        ORDER BY created_at DESC, id DESC
+        LIMIT 50
+      `).all()
+    ]);
+    const variants = rawVariants.map((v) => ({
       ...v,
       available: Math.max(0, Number(v.on_hand) - Number(v.reserved)),
       is_low_stock: Number(v.on_hand) - Number(v.reserved) <= Number(v.low_stock_threshold),
       price_formatted: formatMYR(v.price_minor),
       is_demo: Boolean(v.is_demo)
     }));
-
-    // Unconfirmed draft references where stock is NULL (never shown as 0 available real inventory!)
-    const unconfirmedDrafts = await db.prepare(`
-      SELECT id, reference_id, title, category_slug, publish_status, stock_quantity, sellable_sku
-      FROM products
-      WHERE stock_quantity IS NULL
-      ORDER BY reference_order ASC
-    `).all();
-
-    const movements = await db.prepare(`
-      SELECT * FROM stock_movements
-      ORDER BY created_at DESC, id DESC
-      LIMIT 50
-    `).all();
 
     return sendJson(res, 200, {
       variants,
@@ -2840,18 +2891,28 @@ async function handleApiRequest(req, res, urlObj) {
   // Admin Customers & CSV Export
   if (pathname === '/api/admin/customers' && method === 'GET') {
     const q = String((urlObj.searchParams.get('q')) || '').trim().toLowerCase();
-    const customers = await db.prepare("SELECT * FROM users WHERE role = 'CUSTOMER' ORDER BY is_demo ASC, created_at DESC").all();
+    const [customers, allUserOrders] = await Promise.all([
+      db.prepare("SELECT * FROM users WHERE role = 'CUSTOMER' ORDER BY is_demo ASC, created_at DESC").all(),
+      db.prepare('SELECT user_id, payment_status, total_minor, refunded_minor FROM orders WHERE user_id IS NOT NULL').all()
+    ]);
 
-    const enriched = await Promise.all(customers.
-    filter((c) => {
-      if (!q) return true;
-      return `${c.name} ${c.email} ${c.phone || ''}`.toLowerCase().includes(q);
-    }).map(
-      async (c) => {
-        const orders = await db.prepare('SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC').all(c.id);
-        const totalPaidMinor = orders.
-        filter((o) => ['paid', 'refund_pending', 'partially_refunded'].includes(o.payment_status)).
-        reduce((sum, o) => sum + Number(o.total_minor) - Number(o.refunded_minor || 0), 0);
+    const ordersByUser = new Map();
+    for (const o of allUserOrders) {
+      const uid = Number(o.user_id);
+      if (!ordersByUser.has(uid)) ordersByUser.set(uid, []);
+      ordersByUser.get(uid).push(o);
+    }
+
+    const enriched = customers
+      .filter((c) => {
+        if (!q) return true;
+        return `${c.name} ${c.email} ${c.phone || ''}`.toLowerCase().includes(q);
+      })
+      .map((c) => {
+        const orders = ordersByUser.get(Number(c.id)) || [];
+        const totalPaidMinor = orders
+          .filter((o) => ['paid', 'refund_pending', 'partially_refunded'].includes(o.payment_status))
+          .reduce((sum, o) => sum + Number(o.total_minor) - Number(o.refunded_minor || 0), 0);
         return {
           id: c.id,
           email: c.email,
@@ -2864,7 +2925,7 @@ async function handleApiRequest(req, res, urlObj) {
           total_paid_formatted: formatMYR(totalPaidMinor),
           created_at: c.created_at
         };
-      }));
+      });
 
     return sendJson(res, 200, { customers: enriched });
   }
@@ -3088,10 +3149,12 @@ async function handleApiRequest(req, res, urlObj) {
 
   // Admin Store Settings & Audited Merchant QR Versioning
   if (pathname === '/api/admin/settings' && method === 'GET') {
-    const settingsRow = await db.prepare('SELECT * FROM store_settings WHERE id = 1').get();
-    const paymentVersions = await db.prepare('SELECT * FROM payment_instruction_versions ORDER BY version_number DESC').all();
-    const auditLogs = await db.prepare('SELECT * FROM audit_events ORDER BY created_at DESC LIMIT 30').all();
-    const notifications = await db.prepare('SELECT * FROM notification_jobs ORDER BY created_at DESC LIMIT 25').all();
+    const [settingsRow, paymentVersions, auditLogs, notifications] = await Promise.all([
+      db.prepare('SELECT * FROM store_settings WHERE id = 1').get(),
+      db.prepare('SELECT * FROM payment_instruction_versions ORDER BY version_number DESC').all(),
+      db.prepare('SELECT * FROM audit_events ORDER BY created_at DESC LIMIT 30').all(),
+      db.prepare('SELECT * FROM notification_jobs ORDER BY created_at DESC LIMIT 25').all()
+    ]);
 
     return sendJson(res, 200, {
       settings: {
@@ -3284,6 +3347,10 @@ async function handleApiRequest(req, res, urlObj) {
 
 let requestTail=Promise.resolve();
 async function handleRequest(req, res) {
+  const method = String(req.method || 'GET').toUpperCase();
+  if (process.env.SCHA_ENV !== 'test' && (method === 'GET' || method === 'HEAD')) {
+    return await dispatchRequest(req, res);
+  }
   const previous=requestTail;let release;requestTail=new Promise(r=>release=r);await previous;
   try{return await dispatchRequest(req,res);}finally{release();}
 }

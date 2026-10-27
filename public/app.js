@@ -394,6 +394,18 @@ export async function renderRoute() {
 
   if (pathname.startsWith('/products/')) {
     const slug = decodeURIComponent(pathname.slice('/products/'.length));
+    const cachedProducts = state.storefront?.products || [];
+    const cachedProduct = !isPreview && cachedProducts.find(
+      (p) => p.slug === slug || p.reference_id === slug.toUpperCase() || String(p.id) === slug
+    );
+    if (cachedProduct) {
+      const related = cachedProducts
+        .filter((r) => r.category_slug === cachedProduct.category_slug && r.id !== cachedProduct.id)
+        .slice(0, 4);
+      currentPdpData = { product: cachedProduct, related };
+      appEl.innerHTML = renderProductDetailPage(currentPdpData, 0);
+      return;
+    }
     try {
       currentPdpData = await apiFetch(`/api/products/${encodeURIComponent(slug)}${isPreview ? '?preview=1' : ''}`);
       appEl.innerHTML = renderProductDetailPage(currentPdpData, 0);
@@ -1064,6 +1076,7 @@ document.addEventListener('submit', async (e) => {
         await navigateTo('/admin');
         return;
       }
+      state.bootstrapped = false;
       showToast('Welcome back to Shop by SCHA.');
       const requestedRedirect=new URLSearchParams(window.location.search).get('redirect');
       const redir = requestedRedirect?.startsWith('/') && !requestedRedirect.startsWith('//') ? requestedRedirect : '/account';

@@ -139,6 +139,8 @@ export const state = {
   csrfToken: null,
   sessionExpired: false,
   storefront: null,
+  bootstrapped: false,
+  bootstrappedPreview: false,
   cart: { items: [], itemCount: 0, subtotal_formatted: 'RM0.00', total_formatted: 'RM0.00', warnings: [] },
   checkoutDraft: {
     guestContinued: false,
@@ -215,22 +217,44 @@ export async function apiFetch(url, options = {}) {
     throw err;
   }
 
+  const method = String(options.method || 'GET').toUpperCase();
+  if (method !== 'GET' && method !== 'HEAD') {
+    if (
+      url.startsWith('/api/admin/products') ||
+      url.startsWith('/api/admin/inventory') ||
+      url.startsWith('/api/admin/content') ||
+      url.startsWith('/api/admin/settings') ||
+      url.startsWith('/api/checkout/place-order') ||
+      url.startsWith('/api/auth/register') ||
+      url.startsWith('/api/auth/logout') ||
+      url.startsWith('/api/account/profile')
+    ) {
+      state.bootstrapped = false;
+    }
+  }
+
   return data;
 }
 
-export async function bootstrapSessionAndStore(isPreview = false) {
+export async function bootstrapSessionAndStore(isPreview = false, force = false) {
+  const wantPreview = Boolean(isPreview);
+  if (state.bootstrapped && state.bootstrappedPreview === wantPreview && !force && state.storefront) {
+    return;
+  }
   // Authenticate first. Only /api/cart may initialize the cart cookie.
   // A competing auth/me Set-Cookie previously replaced the just-populated bag.
   const authData = await apiFetch('/api/auth/me');
   state.csrfToken = authData.csrfToken;
   const [sfData, cartData] = await Promise.all([
-    apiFetch(`/api/storefront${isPreview ? '?preview=1' : ''}`), apiFetch('/api/cart')
+    apiFetch(`/api/storefront${wantPreview ? '?preview=1' : ''}`), apiFetch('/api/cart')
   ]);
   state.user = authData.user;
   state.csrfToken = authData.csrfToken;
   state.sessionExpired = authData.sessionExpired;
   state.storefront = sfData;
   state.cart = cartData;
+  state.bootstrapped = true;
+  state.bootstrappedPreview = wantPreview;
 
   if (state.user && !state.checkoutDraft.email) {
     state.checkoutDraft.email = state.user.email || '';

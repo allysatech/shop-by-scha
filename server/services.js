@@ -60,7 +60,13 @@ async function scheduleNotification({ orderId, recipientEmail, templateType, ide
 }
 
 // Sweep expired unpaid stock reservations (never releases active_review_hold while buyer awaits review!)
+let lastSweepTimestamp = 0;
 async function sweepExpiredReservations() {
+  if (process.env.SCHA_ENV !== 'test') {
+    const nowMs = Date.now();
+    if (nowMs - lastSweepTimestamp < 15000) return 0;
+    lastSweepTimestamp = nowMs;
+  }
   const now = new Date().toISOString();
   const expiredOrders = await db.prepare(`
     SELECT id, order_number, customer_email, payment_status, fulfilment_status
@@ -149,18 +155,22 @@ async function getShippingQuote(stateName) {
 }
 
 async function getCartDetails(cartId, stateName = 'Wilayah Persekutuan Kuala Lumpur', selectedMethodId = null) {
-  const items = await db.prepare(`
-    SELECT ci.id AS cart_item_id, ci.quantity, ci.product_id, ci.variant_id,
-           p.title AS product_title, p.slug AS product_slug, p.brand, p.reference_id,
-           p.publish_status, p.purchase_enabled, p.is_demo AS product_is_demo,
-           v.sku, v.title AS variant_title, v.price_minor, v.on_hand, v.reserved, v.is_active, v.is_demo AS variant_is_demo,
-           (SELECT path FROM product_media pm WHERE pm.product_id = p.id ORDER BY pm.sort_order ASC LIMIT 1) AS image_path
-    FROM cart_items ci
-    JOIN products p ON p.id = ci.product_id
-    JOIN product_variants v ON v.id = ci.variant_id
-    WHERE ci.cart_id = ?
-    ORDER BY ci.id ASC
-  `).all(cartId);
+  const [items, cartRow, shippingQuote] = await Promise.all([
+    db.prepare(`
+      SELECT ci.id AS cart_item_id, ci.quantity, ci.product_id, ci.variant_id,
+             p.title AS product_title, p.slug AS product_slug, p.brand, p.reference_id,
+             p.publish_status, p.purchase_enabled, p.is_demo AS product_is_demo,
+             v.sku, v.title AS variant_title, v.price_minor, v.on_hand, v.reserved, v.is_active, v.is_demo AS variant_is_demo,
+             (SELECT path FROM product_media pm WHERE pm.product_id = p.id ORDER BY pm.sort_order ASC LIMIT 1) AS image_path
+      FROM cart_items ci
+      JOIN products p ON p.id = ci.product_id
+      JOIN product_variants v ON v.id = ci.variant_id
+      WHERE ci.cart_id = ?
+      ORDER BY ci.id ASC
+    `).all(cartId),
+    db.prepare('SELECT discount_code FROM carts WHERE id = ?').get(cartId),
+    getShippingQuote(stateName)
+  ]);
 
   let subtotalMinor = 0;
   let hasDemoItems = false;
@@ -187,7 +197,6 @@ async function getCartDetails(cartId, stateName = 'Wilayah Persekutuan Kuala Lum
     };
   });
 
-  const cartRow = await db.prepare('SELECT discount_code FROM carts WHERE id = ?').get(cartId);
   let discountMinor = 0;
   let discountCode = cartRow ? cartRow.discount_code : null;
   if (discountCode === 'SCHA10' && subtotalMinor > 0) {
@@ -196,7 +205,6 @@ async function getCartDetails(cartId, stateName = 'Wilayah Persekutuan Kuala Lum
     discountCode = null;
   }
 
-  const shippingQuote = await getShippingQuote(stateName);
   const chosenMethod = (shippingQuote.methods || []).find((m) => m.id === selectedMethodId) || shippingQuote.defaultMethod;
   const shippingMinor = enrichedItems.length > 0 && chosenMethod ? Number(chosenMethod.rate_minor) : 0;
   const taxMinor = 0;
@@ -246,15 +254,17 @@ const FULFILMENT_STATUS_LABELS = {
 
 async function enrichOrder(orderRow, includeAdminFields = false) {
   if (!orderRow) return null;
-  const items = await db.prepare('SELECT * FROM order_items WHERE order_id = ? ORDER BY id ASC').all(orderRow.id);
-  const events = await db.prepare(`
-    SELECT * FROM status_events
-    WHERE order_id = ? ${includeAdminFields ? '' : 'AND customer_visible = 1'}
-    ORDER BY created_at ASC, id ASC
-  `).all(orderRow.id);
-  const submissions = await db.prepare('SELECT * FROM payment_submissions WHERE order_id = ? ORDER BY id DESC').all(orderRow.id);
-  const shipments = await db.prepare('SELECT * FROM shipments WHERE order_id = ? ORDER BY id DESC').all(orderRow.id);
-  const refunds = await db.prepare('SELECT * FROM manual_refunds WHERE order_id = ? ORDER BY id DESC').all(orderRow.id);
+  const [items, events, submissions, shipments, refunds] = await Promise.all([
+    db.prepare('SELECT * FROM order_items WHERE order_id = ? ORDER BY id ASC').all(orderRow.id),
+    db.prepare(`
+      SELECT * FROM status_events
+      WHERE order_id = ? ${includeAdminFields ? '' : 'AND customer_visible = 1'}
+      ORDER BY created_at ASC, id ASC
+    `).all(orderRow.id),
+    db.prepare('SELECT * FROM payment_submissions WHERE order_id = ? ORDER BY id DESC').all(orderRow.id),
+    db.prepare('SELECT * FROM shipments WHERE order_id = ? ORDER BY id DESC').all(orderRow.id),
+    db.prepare('SELECT * FROM manual_refunds WHERE order_id = ? ORDER BY id DESC').all(orderRow.id)
+  ]);
 
   const result = {
     id: orderRow.id,
