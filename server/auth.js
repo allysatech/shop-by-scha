@@ -52,7 +52,7 @@ function serializeCookie(name, value, options = {}) {
   return parts.join('; ');
 }
 
-const SESSION_SECRET = process.env.SESSION_SECRET || (require('./runtime').sandbox ? 'test-only-session-secret' : '');
+const SESSION_SECRET = process.env.SESSION_SECRET || (require('./runtime').sandbox ? 'test-only-session-secret' : (process.env.DATABASE_URL ? crypto.createHash('sha256').update(process.env.DATABASE_URL).digest('hex') : ''));
 if(!SESSION_SECRET)throw new Error('SESSION_SECRET is required outside the isolated test/preview environment.');
 
 function signSessionPayload(payloadStr) {

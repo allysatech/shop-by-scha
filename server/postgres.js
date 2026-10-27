@@ -21,7 +21,7 @@ function createPostgres() {
     pool={query:(s,p)=>engine.query(s,p),connect:async()=>({query:(s,p)=>engine.query(s,p),release(){}}),end:()=>engine.close()};
   } else {
     const {Pool,types}=require('pg');types.setTypeParser(20,Number);
-    pool=new Pool({connectionString:process.env.DATABASE_URL,max:2,connectionTimeoutMillis:10000,idleTimeoutMillis:10000});
+    pool=new Pool({connectionString:process.env.DATABASE_URL,max:10,connectionTimeoutMillis:10000,idleTimeoutMillis:10000});
     pool.on('error',()=>console.error('Database connection failed; request will fail safely.'));
   }
   const query=(sql,params=[]) => (context.getStore()||pool).query(translate(sql),params);

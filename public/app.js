@@ -359,6 +359,7 @@ export async function renderRoute() {
       }
     } catch (err) {
       showToast(err.message || 'Admin error');
+      return;
     }
   }
 

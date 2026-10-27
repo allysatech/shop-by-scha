@@ -442,6 +442,13 @@ async function initSchema() {
       details_json TEXT NOT NULL DEFAULT '{}',
       created_at TEXT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS stored_objects (
+      key TEXT PRIMARY KEY,
+      content_type TEXT NOT NULL,
+      data_base64 TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
   `);
 }
 

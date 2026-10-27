@@ -1516,7 +1516,7 @@ async function handleApiRequest(req, res, urlObj) {
   // =========================================================================
   if (pathname === '/api/admin/overview' && method === 'GET') {
     await sweepExpiredReservations();
-    const includeDemo = sandbox && (urlObj.searchParams.get('include_demo')) === '1';
+    const includeDemo = (urlObj.searchParams.get('include_demo')) === '1';
     const dateFrom = (urlObj.searchParams.get('date_from')) || '2026-10-01';
     const dateTo = (urlObj.searchParams.get('date_to')) || '2026-10-31';
 
@@ -1596,12 +1596,14 @@ async function handleApiRequest(req, res, urlObj) {
         AND substr(o.created_at, 1, 10) >= ?
         AND substr(o.created_at, 1, 10) <= ?
         ${includeDemo ? '' : 'AND o.is_demo = 0'}
-      GROUP BY oi.sku_snapshot, oi.title_snapshot
+      GROUP BY oi.sku_snapshot, oi.title_snapshot, oi.image_snapshot
       ORDER BY units_sold DESC
       LIMIT 5
     `).all(dateFrom, dateTo)).map((tp) => ({
       ...tp,
-      revenue_formatted: formatMYR(tp.revenue_minor)
+      units_sold: Number(tp.units_sold || 0),
+      revenue_minor: Number(tp.revenue_minor || 0),
+      revenue_formatted: formatMYR(Number(tp.revenue_minor || 0))
     }));
 
     return sendJson(res, 200, {
@@ -2869,7 +2871,7 @@ async function handleApiRequest(req, res, urlObj) {
 
   if (pathname === '/api/admin/customers/export.csv' && method === 'GET') {
     const q = String((urlObj.searchParams.get('q')) || '').trim().toLowerCase();
-    const includeDemo = sandbox && (urlObj.searchParams.get('include_demo')) === '1';
+    const includeDemo = (urlObj.searchParams.get('include_demo')) === '1';
     const customers = await db.prepare("SELECT * FROM users WHERE role = 'CUSTOMER' ORDER BY id ASC").all();
 
     const lines = ['Customer ID,Name,Email,Phone,Status,Demo Record,Orders Count,Confirmed Net Paid (MYR)'];
@@ -2963,7 +2965,7 @@ async function handleApiRequest(req, res, urlObj) {
 
   // Admin Analytics CSV Export
   if (pathname === '/api/admin/analytics/export.csv' && method === 'GET') {
-    const includeDemo = sandbox && (urlObj.searchParams.get('include_demo')) === '1';
+    const includeDemo = (urlObj.searchParams.get('include_demo')) === '1';
     const dateFrom = (urlObj.searchParams.get('date_from')) || '2026-10-01';
     const dateTo = (urlObj.searchParams.get('date_to')) || '2026-10-31';
 
