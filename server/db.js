@@ -1,25 +1,17 @@
 require('./env');
-const { DatabaseSync } = require('node:sqlite');
-const path = require('node:path');
-const fs = require('node:fs');
-const os = require('node:os');
-
-const DATA_DIR = process.env.VERCEL
-  ? path.join(os.tmpdir(), 'shop_by_scha_data')
-  : path.join(__dirname, '..', 'data');
-if (!fs.existsSync(DATA_DIR)) {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
+const path=require('node:path');const fs=require('node:fs');
+const usePostgres=Boolean(process.env.DATABASE_URL || (process.env.SCHA_DATABASE==='pglite' && process.env.SCHA_ENV==='test'));
+const DB_PATH=process.env.DB_PATH || path.join(__dirname,'..','data','shop_by_scha.sqlite');
+let db,postgresTransaction;
+if(usePostgres){({db,transaction:postgresTransaction}=require('./postgres').createPostgres());}
+else {
+  if(process.env.VERCEL)throw new Error('Durable DATABASE_URL is required on Vercel. Ephemeral SQLite checkout is disabled.');
+  const {DatabaseSync}=require('node:sqlite');fs.mkdirSync(path.dirname(DB_PATH),{recursive:true});
+  db=new DatabaseSync(DB_PATH);db.exec('PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON; PRAGMA busy_timeout=5000;');
+  db.driver='sqlite';db.columns=table=>db.prepare('PRAGMA table_info('+table+')').all();
 }
-
-const DB_PATH = process.env.DB_PATH || path.join(DATA_DIR, 'shop_by_scha.sqlite');
-const db = new DatabaseSync(DB_PATH);
-
-db.exec('PRAGMA journal_mode = WAL;');
-db.exec('PRAGMA foreign_keys = ON;');
-db.exec('PRAGMA busy_timeout = 5000;');
-
-function initSchema() {
-  db.exec(`
+async function initSchema() {
+  await db.exec(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       email TEXT NOT NULL UNIQUE COLLATE NOCASE,
@@ -453,25 +445,24 @@ function initSchema() {
   `);
 }
 
-function runTransaction(fn) {
+async function runTransaction(fn) {
+  if (postgresTransaction) return postgresTransaction(fn);
   db.exec('BEGIN IMMEDIATE TRANSACTION');
-  try {
-    const result = fn();
-    db.exec('COMMIT');
-    return result;
-  } catch (err) {
-    try {
-      db.exec('ROLLBACK');
-    } catch (_) {}
-    throw err;
-  }
+  try {const result=await fn();db.exec('COMMIT');return result;}
+  catch(e){db.exec('ROLLBACK');throw e;}
 }
-
-initSchema();
-
-module.exports = {
-  db,
-  runTransaction,
-  initSchema,
-  DB_PATH
-};
+const ready=(async()=>{
+  if(usePostgres && !require('./runtime').sandbox && process.env.SCHA_MIGRATE!=='1'){await db.prepare('SELECT id FROM store_settings LIMIT 1').all();return;}
+  await initSchema();
+  await db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_bank_ref_ci ON payment_reviews(UPPER(actual_bank_reference)) WHERE action = 'confirm_payment' AND actual_bank_reference IS NOT NULL");
+  const columns = await db.columns('products');
+  if (!columns.some(c=>c.name==='stock_type')) await db.exec("ALTER TABLE products ADD COLUMN stock_type TEXT NOT NULL DEFAULT 'unconfirmed'");
+  const settingsColumns=await db.columns('store_settings');
+  for (const key of ['support_hours','founder_story','sourcing_info','business_identity']) if(!settingsColumns.some(c=>c.name===key)) await db.exec(`ALTER TABLE store_settings ADD COLUMN ${key} TEXT NOT NULL DEFAULT ''`);
+  if(!(await db.columns('notification_jobs')).some(c=>c.name==='provider_message_id')) await db.exec('ALTER TABLE notification_jobs ADD COLUMN provider_message_id TEXT');
+  await db.exec(`CREATE TABLE IF NOT EXISTS checkout_requests (
+    scope TEXT NOT NULL, request_key TEXT NOT NULL, order_id INTEGER NOT NULL REFERENCES orders(id),
+    PRIMARY KEY(scope,request_key)
+  )`);
+})();
+module.exports={db,ready,runTransaction,initSchema,DB_PATH};

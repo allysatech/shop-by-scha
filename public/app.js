@@ -36,8 +36,12 @@ import {
 } from './admin-views.js';
 
 let currentPdpData = null;
+let drawerFocusReturn=null;
+let swipeStart=null;
 
 export async function navigateTo(url, replace = false) {
+  const currentKey=window.location.pathname+window.location.search;
+  sessionStorage.setItem('scha:scroll:'+currentKey,String(window.scrollY));
   if (state.pollingTimer) {
     clearInterval(state.pollingTimer);
     state.pollingTimer = null;
@@ -58,16 +62,18 @@ export async function navigateTo(url, replace = false) {
       return;
     }
   }
-  window.scrollTo({ top: 0, behavior: 'instant' });
+  const saved=Number(sessionStorage.getItem('scha:scroll:'+url)||0);
+  window.scrollTo({ top: saved, behavior: 'instant' });
 }
 
 function openAddedToBagDrawer(productTitle) {
   const drawerRoot = document.getElementById('drawer-root');
   if (!drawerRoot) return;
+  drawerFocusReturn=document.activeElement;
   const cart = state.cart;
   drawerRoot.innerHTML = `
     <div class="drawer-backdrop" data-action="close-drawer">
-      <div class="drawer-panel" role="dialog" aria-modal="true" aria-label="Added to bag confirmation" onclick="event.stopPropagation()">
+      <div class="drawer-panel" role="dialog" aria-modal="true" aria-label="Added to bag confirmation">
         <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-warm);padding-bottom:12px;">
           <strong style="font-size:16px;">Added to your bag</strong>
           <button type="button" class="header-icon-btn" data-action="close-drawer" aria-label="Close drawer">✕</button>
@@ -97,7 +103,7 @@ function openMobileMenuDrawer() {
 
   drawerRoot.innerHTML = `
     <div class="drawer-backdrop left" data-action="close-drawer">
-      <aside class="drawer-panel side-nav-drawer" role="dialog" aria-modal="true" aria-label="Storefront Side Navigation Menu" onclick="event.stopPropagation()">
+      <aside class="drawer-panel side-nav-drawer" role="dialog" aria-modal="true" aria-label="Storefront Side Navigation Menu">
         <div class="side-nav-header">
           <a href="/" data-nav aria-label="Shop by SCHA Home">
             <img src="/images/logo.png" alt="Shop by SCHA" class="brand-logo-img" style="height:52px;" />
@@ -202,6 +208,8 @@ function openMobileMenuDrawer() {
 function closeDrawer() {
   const drawerRoot = document.getElementById('drawer-root');
   if (drawerRoot) drawerRoot.innerHTML = '';
+  if(drawerFocusReturn?.isConnected)drawerFocusReturn.focus();
+  drawerFocusReturn=null;
 }
 
 export async function renderRoute() {
@@ -213,7 +221,10 @@ export async function renderRoute() {
   const params = urlObj.searchParams;
   const isPreview = params.get('preview') === '1';
 
+  appEl.setAttribute('aria-busy','true');
+  if (!state.storefront) appEl.innerHTML = '<main class="page-container" role="status">Loading your shop...</main>';
   await bootstrapSessionAndStore(isPreview);
+  appEl.removeAttribute('aria-busy');
 
   // Compatibility redirect: /account/payment-methods -> /account/payment-info
   if (pathname === '/account/payment-methods') {
@@ -282,8 +293,10 @@ export async function renderRoute() {
         return;
       }
 
-      if (pathname === '/admin/inventory') {
+      if (pathname === '/admin/inventory' || pathname.startsWith('/admin/inventory/')) {
         const data = await apiFetch('/api/admin/inventory');
+        if(params.get('filter')==='low-stock')data.variants=data.variants.filter(v=>v.is_low_stock);
+        if(pathname.startsWith('/admin/inventory/')){const id=Number(pathname.split('/').pop());data.variants=data.variants.filter(v=>v.id===id);data.movements=(data.movements||[]).filter(m=>m.variant_id===id);}
         appEl.innerHTML = renderAdminInventory(data);
         return;
       }
@@ -381,7 +394,7 @@ export async function renderRoute() {
   if (pathname.startsWith('/products/')) {
     const slug = decodeURIComponent(pathname.slice('/products/'.length));
     try {
-      currentPdpData = await apiFetch(`/api/products/${encodeURIComponent(slug)}`);
+      currentPdpData = await apiFetch(`/api/products/${encodeURIComponent(slug)}${isPreview ? '?preview=1' : ''}`);
       appEl.innerHTML = renderProductDetailPage(currentPdpData, 0);
     } catch (err) {
       appEl.innerHTML = renderShopOrCollectionPage({ mode: 'shop', queryParams: params });
@@ -533,6 +546,9 @@ document.addEventListener('click', async (e) => {
 
   const actionBtn = e.target.closest('[data-action]');
   if (actionBtn) {
+    if(actionBtn.dataset.action==='toggle-admin-menu') {const sidebar=document.querySelector('.admin-sidebar');const open=sidebar.classList.toggle('is-open');actionBtn.setAttribute('aria-expanded',String(open));return;}
+    if(actionBtn.dataset.action==='zoom-product'){const img=document.getElementById('pdp-active-img');const root=document.getElementById('drawer-root');root.innerHTML=`<div class="drawer-backdrop" data-action="close-drawer"><div class="zoom-panel" role="dialog" aria-modal="true" aria-label="Product image zoom"><button type="button" class="btn-capsule-secondary" data-action="close-drawer">Close image</button><img src="${escapeHtml(img.src)}" alt="${escapeHtml(img.alt)}" /></div></div>`;root.querySelector('button').focus();return;}
+
     const action = actionBtn.getAttribute('data-action');
 
     if (action === 'open-mobile-menu') {
@@ -540,6 +556,7 @@ document.addEventListener('click', async (e) => {
       return;
     }
     if (action === 'close-drawer') {
+      if(actionBtn.classList.contains('drawer-backdrop') && e.target!==actionBtn)return;
       closeDrawer();
       return;
     }
@@ -595,6 +612,8 @@ document.addEventListener('click', async (e) => {
         const res = await apiFetch('/api/checkout/place-order', {
           method: 'POST',
           body: {
+            expected_total_minor: state.cart.total_minor,
+            idempotency_key: d.orderRequestKey || (d.orderRequestKey = crypto.randomUUID()),
             email: d.email,
             phone: d.phone,
             shipping_method_id: d.shipping_method_id,
@@ -628,24 +647,7 @@ document.addEventListener('click', async (e) => {
       showToast('Refreshed saved order state.');
       return;
     }
-    if (action === 'fill-demo-customer') {
-      const emailEl = document.getElementById('cl-email');
-      const passEl = document.getElementById('cl-pass');
-      if (emailEl && passEl) {
-        emailEl.value = 'customer@example.com';
-        passEl.value = 'Customer!2026';
-      }
-      return;
-    }
-    if (action === 'fill-demo-admin') {
-      const emailEl = document.getElementById('al-email');
-      const passEl = document.getElementById('al-pass');
-      if (emailEl && passEl) {
-        emailEl.value = 'admin@shopbyscha.my';
-        passEl.value = 'SchaAdmin!2026';
-      }
-      return;
-    }
+    if (action === 'fill-demo-customer' || action === 'fill-demo-admin') {showToast('Use the account supplied with your isolated test environment.');return;}
     if (action === 'newsletter-unsubscribe') {
       const form = document.getElementById('newsletter-form');
       const email = form ? form.querySelector('input[name="email"]').value : '';
@@ -764,11 +766,9 @@ document.addEventListener('click', async (e) => {
 
   const removeBtn = e.target.closest('[data-cart-remove]');
   if (removeBtn) {
-    const itemId = Number(removeBtn.getAttribute('data-cart-remove'));
-    const res = await apiFetch(`/api/cart/items/${itemId}`, { method: 'DELETE' });
-    state.cart = res.cart;
-    showToast('Item removed from bag.');
-    await renderRoute();
+    if(removeBtn.disabled)return;removeBtn.disabled=true;
+    try{const itemId=Number(removeBtn.getAttribute('data-cart-remove'));const result=await apiFetch(`/api/cart/items/${itemId}`,{method:'DELETE'});state.cart=result.cart;showToast('Item removed from bag.');await renderRoute();}
+    catch(err){showToast(err.message);removeBtn.disabled=false;}
     return;
   }
 
@@ -953,6 +953,7 @@ document.addEventListener('submit', async (e) => {
     e.preventDefault();
     const prodId = Number(form.getAttribute('data-product-id'));
     const fd = new FormData(form);
+    const submit=form.querySelector('[type=submit]');if(submit.disabled)return;submit.disabled=true;const label=submit.textContent;submit.textContent='Adding...';
     try {
       const res = await apiFetch('/api/cart/items', {
         method: 'POST',
@@ -963,10 +964,12 @@ document.addEventListener('submit', async (e) => {
         }
       });
       state.cart = res.cart;
+      document.querySelector('.bag-pill-count')?.replaceChildren(document.createTextNode(String(state.cart.itemCount)));
+      const bagLink=document.querySelector('.header-cart-btn');if(bagLink){bagLink.setAttribute('aria-label',`Shopping Cart (${state.cart.itemCount} items)`);bagLink.title=`Shopping Cart (${state.cart.itemCount} items)`;}
       openAddedToBagDrawer(currentPdpData?.product?.title || 'Item');
     } catch (err) {
-      showToast(err.message);
-    }
+      showToast(err.message);showFormError(form,err);
+    } finally {submit.disabled=false;submit.textContent=label;}
     return;
   }
 
@@ -983,6 +986,7 @@ document.addEventListener('submit', async (e) => {
     state.checkoutDraft.state = String(fd.get('state') || 'Wilayah Persekutuan Kuala Lumpur');
     state.checkoutDraft.shipping_method_id = fd.get('shipping_method_id') || null;
     state.checkoutDraft.billing_same_as_shipping = fd.get('billing_same_as_shipping') === 'on';
+    state.checkoutDraft.orderRequestKey = crypto.randomUUID();
     state.checkoutDraft.step = 2;
     await renderRoute();
     return;
@@ -1016,7 +1020,7 @@ document.addEventListener('submit', async (e) => {
       showToast(res.message);
       await renderRoute();
     } catch (err) {
-      showToast(err.message);
+      showToast(err.message);showFormError(form,err);
     }
     return;
   }
@@ -1035,7 +1039,7 @@ document.addEventListener('submit', async (e) => {
       showToast('Order verified.');
       await navigateTo(res.redirect_url);
     } catch (err) {
-      showToast(err.message);
+      showToast(err.message);showFormError(form,err);
     }
     return;
   }
@@ -1060,10 +1064,11 @@ document.addEventListener('submit', async (e) => {
         return;
       }
       showToast('Welcome back to Shop by SCHA.');
-      const redir = new URLSearchParams(window.location.search).get('redirect') || '/account';
+      const requestedRedirect=new URLSearchParams(window.location.search).get('redirect');
+      const redir = requestedRedirect?.startsWith('/') && !requestedRedirect.startsWith('//') ? requestedRedirect : '/account';
       await navigateTo(redir);
     } catch (err) {
-      showToast(err.message);
+      showToast(err.message);showFormError(form,err);
     }
     return;
   }
@@ -1084,7 +1089,7 @@ document.addEventListener('submit', async (e) => {
       showToast('Customer account created.');
       await navigateTo('/account');
     } catch (err) {
-      showToast(err.message);
+      showToast(err.message);showFormError(form,err);
     }
     return;
   }
@@ -1116,7 +1121,7 @@ document.addEventListener('submit', async (e) => {
         `;
       }
     } catch (err) {
-      showToast(err.message);
+      showToast(err.message);showFormError(form,err);
     }
     return;
   }
@@ -1132,7 +1137,7 @@ document.addEventListener('submit', async (e) => {
       showToast(res.message);
       await navigateTo('/login');
     } catch (err) {
-      showToast(err.message);
+      showToast(err.message);showFormError(form,err);
     }
     return;
   }
@@ -1158,7 +1163,7 @@ document.addEventListener('submit', async (e) => {
       showToast('Address added.');
       await renderRoute();
     } catch (err) {
-      showToast(err.message);
+      showToast(err.message);showFormError(form,err);
     }
     return;
   }
@@ -1179,7 +1184,7 @@ document.addEventListener('submit', async (e) => {
       showToast(res.message);
       await renderRoute();
     } catch (err) {
-      showToast(err.message);
+      showToast(err.message);showFormError(form,err);
     }
     return;
   }
@@ -1195,7 +1200,7 @@ document.addEventListener('submit', async (e) => {
       showToast(res.message);
       form.reset();
     } catch (err) {
-      showToast(err.message);
+      showToast(err.message);showFormError(form,err);
     }
     return;
   }
@@ -1228,7 +1233,7 @@ document.addEventListener('submit', async (e) => {
       showToast('Logged in to Shop by SCHA Admin Workspace.');
       await navigateTo('/admin');
     } catch (err) {
-      showToast(err.message);
+      showToast(err.message);showFormError(form,err);
     }
     return;
   }
@@ -1262,10 +1267,15 @@ document.addEventListener('submit', async (e) => {
       reference_colour_description: fd.get('reference_colour_description'),
       low_stock_threshold: fd.get('low_stock_threshold'),
       description: fd.get('description'),
+      stock_type: fd.get('stock_type'),
+      shipping_returns_note: fd.get('shipping_returns_note'),
       notes: fd.get('notes')
     };
 
     try {
+      payload.specifications=JSON.parse(fd.get('specifications_json') || '{}');
+      const variants=JSON.parse(fd.get('variants_json') || '[]');
+      if(variants.length)payload.variants=variants;
       const res = await apiFetch(prodId ? `/api/admin/products/${prodId}` : '/api/admin/products', {
         method: prodId ? 'PUT' : 'POST',
         body: payload
@@ -1273,7 +1283,7 @@ document.addEventListener('submit', async (e) => {
       showToast(res.message);
       await navigateTo(`/admin/products/${res.product.id}`);
     } catch (err) {
-      showToast(err.message);
+      showToast(err.message);showFormError(form,err);
     }
     return;
   }
@@ -1296,7 +1306,7 @@ document.addEventListener('submit', async (e) => {
       showToast(res.message);
       await renderRoute();
     } catch (err) {
-      showToast(err.message);
+      showToast(err.message);showFormError(form,err);
     }
     return;
   }
@@ -1322,7 +1332,7 @@ document.addEventListener('submit', async (e) => {
       showToast(res.message);
       await renderRoute();
     } catch (err) {
-      showToast(err.message);
+      showToast(err.message);showFormError(form,err);
     }
     return;
   }
@@ -1361,7 +1371,7 @@ document.addEventListener('submit', async (e) => {
       showToast(res.message);
       await renderRoute();
     } catch (err) {
-      showToast(err.message);
+      showToast(err.message);showFormError(form,err);
     }
     return;
   }
@@ -1381,7 +1391,7 @@ document.addEventListener('submit', async (e) => {
       showToast(res.message);
       await renderRoute();
     } catch (err) {
-      showToast(err.message);
+      showToast(err.message);showFormError(form,err);
     }
     return;
   }
@@ -1403,7 +1413,7 @@ document.addEventListener('submit', async (e) => {
       showToast(res.message);
       await renderRoute();
     } catch (err) {
-      showToast(err.message);
+      showToast(err.message);showFormError(form,err);
     }
     return;
   }
@@ -1434,7 +1444,7 @@ document.addEventListener('submit', async (e) => {
       showToast(res.message);
       await renderRoute();
     } catch (err) {
-      showToast(err.message);
+      showToast(err.message);showFormError(form,err);
     }
     return;
   }
@@ -1461,7 +1471,7 @@ document.addEventListener('submit', async (e) => {
       showToast(res.message);
       await renderRoute();
     } catch (err) {
-      showToast(err.message);
+      showToast(err.message);showFormError(form,err);
     }
     return;
   }
@@ -1488,7 +1498,7 @@ document.addEventListener('submit', async (e) => {
       showToast(res.message);
       await renderRoute();
     } catch (err) {
-      showToast(err.message);
+      showToast(err.message);showFormError(form,err);
     }
     return;
   }
@@ -1511,7 +1521,7 @@ document.addEventListener('submit', async (e) => {
       showToast(res.message);
       await renderRoute();
     } catch (err) {
-      showToast(err.message);
+      showToast(err.message);showFormError(form,err);
     }
     return;
   }
@@ -1524,6 +1534,8 @@ document.addEventListener('submit', async (e) => {
         method: 'PUT',
         body: {
           store_name: fd.get('store_name'),
+          support_hours:fd.get('support_hours'),business_identity:fd.get('business_identity'),founder_story:fd.get('founder_story'),sourcing_info:fd.get('sourcing_info'),
+          policies:JSON.parse(fd.get('policies_json') || '{}'),shipping_zones:JSON.parse(fd.get('shipping_zones_json') || '[]'),
           support_email: fd.get('support_email'),
           support_phone: fd.get('support_phone'),
           design_preview_enabled: fd.get('design_preview_enabled') === 'on'
@@ -1532,7 +1544,7 @@ document.addEventListener('submit', async (e) => {
       showToast(res.message);
       await renderRoute();
     } catch (err) {
-      showToast(err.message);
+      showToast(err.message);showFormError(form,err);
     }
     return;
   }
@@ -1548,4 +1560,20 @@ window.addEventListener('keydown', (e) => {
   }
 });
 
-renderRoute();
+renderRoute().catch(err=>{document.getElementById('app').innerHTML='<main class="page-container"><h1>We could not load the shop</h1><p>Please refresh to try again.</p></main>';showToast(err.message);});
+
+document.addEventListener('keydown',e=>{
+ const dialog=document.querySelector('[role="dialog"]');if(!dialog)return;
+ if(e.key==='Escape'){e.preventDefault();closeDrawer();return;}
+ if(e.key==='Tab'){const targets=[...dialog.querySelectorAll('button,a[href],input,select,textarea')].filter(el=>!el.disabled && el.getClientRects().length);const first=targets[0],last=targets.at(-1);if(e.shiftKey && document.activeElement===first){e.preventDefault();last?.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus();}}
+});
+document.addEventListener('touchstart',e=>{if(e.target.closest('.pdp-main-media'))swipeStart=e.touches[0].clientX;},{passive:true});
+document.addEventListener('touchend',e=>{if(swipeStart===null)return;const dx=e.changedTouches[0].clientX-swipeStart;swipeStart=null;if(Math.abs(dx)<45)return;const thumbs=[...document.querySelectorAll('[data-pdp-thumb]')];const i=thumbs.findIndex(el=>el.classList.contains('active'));thumbs[(i+(dx<0?1:-1)+thumbs.length)%thumbs.length]?.click();},{passive:true});
+
+function showFormError(form,error){
+ if(!form)return;form.querySelector('[data-form-error]')?.remove();
+ const alert=document.createElement('div');alert.dataset.formError='1';alert.className='form-error';alert.setAttribute('role','alert');alert.tabIndex=-1;alert.textContent=error.message;form.prepend(alert);
+ if(error.data?.field){const input=form.querySelector(`[name="${CSS.escape(error.data.field)}"]`);input?.setAttribute('aria-invalid','true');input?.focus();}else alert.focus();
+}
+let fieldSequence=0;
+new MutationObserver(()=>{for(const label of document.querySelectorAll('label.field-label:not([for])')){const control=label.nextElementSibling;if(control?.matches('input,select,textarea')){if(!control.id)control.id='scha-field-'+(++fieldSequence);label.htmlFor=control.id;}}}).observe(document.getElementById('app'),{childList:true,subtree:true});

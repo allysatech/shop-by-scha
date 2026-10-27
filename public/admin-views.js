@@ -8,6 +8,16 @@ import {
   detectCourierFromTracking
 } from './state.js';
 
+
+function recordCards(records, type) {
+ return `<div class="mobile-card-list">${records.map(r=>{
+  const href=type==='product'?`/admin/products/${r.id}`:type==='inventory'?`/admin/inventory/${r.id}`:type==='customer'?`/admin/customers/${r.id}`:type==='review'?`/admin/payment-reviews?orderId=${r.id}`:`/admin/orders/${r.id}`;
+  const title=r.title || r.name || r.order_number || r.sku;
+  const detail=type==='product'?`${r.brand} / ${r.price_formatted} / ${r.publish_status}`:type==='inventory'?`On hand ${r.on_hand} / Reserved ${r.reserved} / Available ${r.available}`:type==='customer'?`${r.email} / ${r.orders_count} orders`:`${r.customer_name} / ${r.total_formatted} / ${r.payment_status_label || r.payment_status} / ${r.fulfilment_status_label || r.fulfilment_status}`;
+  return `<a class="admin-record-card" href="${escapeHtml(href)}" data-nav><strong>${escapeHtml(title)}</strong><p>${escapeHtml(detail)}</p><span>View details →</span></a>`;
+ }).join('')}</div>`;
+}
+
 export function renderAdminLoginPage(mode = 'login', errorMsg = '') {
   return `
     <main id="main-content" class="page-container admin-login-container">
@@ -81,9 +91,9 @@ export function renderAdminLoginPage(mode = 'login', errorMsg = '') {
               <a href="/" data-nav style="color:var(--text-muted);font-weight:600;">Back to storefront &gt;</a>
               <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
                 <span class="badge badge-draft">NO SIGN-UP</span>
-                <button type="button" class="nav-btn" data-action="fill-demo-admin" style="font-size:12px;color:var(--rose-deep);font-weight:700;">
+                ${state.storefront?.sandbox ? `<button type="button" class="nav-btn" data-action="fill-demo-admin" style="font-size:12px;color:var(--rose-deep);font-weight:700;">
                   Fill Provisioned Admin
-                </button>
+                </button>` : ''}
               </div>
             </div>
           `}
@@ -108,7 +118,7 @@ export function renderAdminShell(activeModule, innerHtml) {
 
   return `
     <div class="admin-shell">
-      <aside class="admin-sidebar" aria-label="Admin Workspace Navigation">
+      <button type="button" class="admin-menu-toggle btn-capsule-secondary" data-action="toggle-admin-menu" aria-expanded="false">Menu</button><aside class="admin-sidebar" aria-label="Admin Workspace Navigation">
         <div class="admin-sidebar-header">
           <a href="/admin" data-nav aria-label="Shop by SCHA Admin">
             <img src="/images/logo.png" alt="Shop by SCHA" class="admin-sidebar-logo" />
@@ -144,7 +154,7 @@ export function renderAdminShell(activeModule, innerHtml) {
             ${state.adminIncludeDemo ? `<span class="badge badge-demo">DEMO DATA INCLUDED</span>` : `<span class="badge badge-paid">LIVE CONFIRMED ONLY</span>`}
           </div>
           <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;font-size:13px;">
-            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:600;">
+            <label style="display:${state.storefront?.sandbox ? 'flex' : 'none'};align-items:center;gap:6px;cursor:pointer;font-weight:600;">
               <input type="checkbox" id="admin-toggle-demo" ${state.adminIncludeDemo ? 'checked' : ''} />
               <span>Include explicit DEMO dataset</span>
             </label>
@@ -208,7 +218,7 @@ export function renderAdminOverview(data) {
         <span class="kpi-value">${k.orders_to_fulfil_count || 0}</span>
         <span class="kpi-link">Fulfilment queue &gt;</span>
       </a>
-      <a href="/admin/inventory" data-nav class="kpi-card">
+      <a href="/admin/inventory?filter=low-stock" data-nav class="kpi-card">
         <span class="kpi-label">Low-stock SKUs</span>
         <span class="kpi-value">${k.low_stock_skus_count || 0}</span>
         <span class="kpi-link">Inventory alerts &gt;</span>
@@ -355,7 +365,7 @@ export function renderAdminProductsList(products = []) {
     ` : ''}
 
     <div class="card-panel">
-      <div class="table-scroll">
+      ${recordCards(products,'product')}<div class="table-scroll">
         <table class="data-table">
           <thead>
             <tr>
@@ -392,7 +402,7 @@ export function renderAdminProductsList(products = []) {
                 </td>
                 <td>
                   <div style="display:flex;gap:10px;font-size:12.5px;font-weight:700;">
-                    <a href="/products/${encodeURIComponent(p.slug)}" data-nav style="color:var(--text-muted);">View</a>
+                    <a href="/products/${encodeURIComponent(p.slug)}?preview=1" data-nav style="color:var(--text-muted);">Preview</a>
                     <a href="/admin/products/${p.id}" data-nav style="color:var(--rose-deep);">Edit</a>
                   </div>
                 </td>
@@ -440,7 +450,10 @@ export function renderAdminProductEditor(product = null) {
       <a href="/admin/products" data-nav class="btn-capsule-secondary" style="padding:8px 18px;">&lt; Back to Products</a>
     </div>
 
-    <form id="admin-product-editor-form" data-product-id="${isNew ? '' : p.id}" class="card-panel">
+    <form id="admin-product-editor-form" data-product-id="${isNew ? '' : p.id}" class="card-panel"><div class="form-grid-2"><div class="field-group"><label class="field-label" for="stock-type">Availability type</label><select id="stock-type" name="stock_type" class="input-field"><option value="unconfirmed">Confirm availability</option><option value="ready_stock" ${p?.stock_type==='ready_stock'?'selected':''}>Ready stock</option><option value="preorder" ${p?.stock_type==='preorder'?'selected':''}>Preorder</option></select></div><div class="field-group"><label class="field-label" for="lead-time">Shipping / preorder lead time</label><input id="lead-time" class="input-field" name="shipping_returns_note" value="${escapeHtml(p?.shipping_returns_note || '')}" placeholder="Merchant-confirmed dispatch estimate" /></div></div>
+<details class="field-group"><summary>Variants: size, colour or shade</summary><label class="field-label" for="variants-json">Confirmed sellable variants (JSON)</label><textarea ${isNew ? 'disabled' : ''} id="variants-json" name="variants_json" rows="7" class="textarea-field">${escapeHtml(JSON.stringify((p.variants||[]).map(v=>({id:v.id,sku:v.sku,title:v.title,attributes:v.attributes,price_minor:v.price_minor,on_hand:v.on_hand,is_active:v.is_active,version:v.version})),null,2))}</textarea><small>Save a new draft first to edit variants. Prices are integer sen. Keep existing IDs. Stock cannot be below reserved units. Disable unavailable variants instead of deleting purchase history.</small></details>
+<details class="field-group"><summary>Product specifications</summary><label class="field-label" for="specifications-json">Merchant-confirmed specifications</label><textarea id="specifications-json" name="specifications_json" class="textarea-field" rows="5">${escapeHtml(JSON.stringify(p.specifications||{},null,2))}</textarea></details>
+
       <div class="form-grid-2">
         <div class="field-group">
           <label class="field-label">Product title</label>
@@ -572,7 +585,7 @@ export function renderAdminInventory(invData) {
     <div class="checkout-grid" style="margin-bottom:24px;">
       <div class="card-panel">
         <h2 style="font-size:17px;font-weight:800;margin:0 0 12px;">Confirmed Sellable SKUs</h2>
-        <div class="table-scroll">
+        ${recordCards(variants,'inventory')}<div class="table-scroll">
           <table class="data-table">
             <thead>
               <tr>
@@ -698,6 +711,7 @@ export function renderAdminPaymentReviews(orders = [], selectedOrderId = null) {
   const payInstr = activeOrder?.payment_instructions || {};
 
   const html = `
+${recordCards(orders,'review')}
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
       <div>
         <h1 class="page-title" style="font-size:26px;">Payment reviews</h1>
@@ -836,7 +850,7 @@ export function renderAdminOrdersList(orders = [], filters = {}) {
     </div>
 
     <div class="card-panel">
-      <div class="table-scroll">
+      ${recordCards(orders,'order')}<div class="table-scroll">
         <table class="data-table">
           <thead>
             <tr>
@@ -1103,7 +1117,7 @@ export function renderAdminCustomers(customers = [], selectedCustomerData = null
     </div>
 
     <div class="card-panel">
-      <div class="table-scroll">
+      ${recordCards(customers,'customer')}<div class="table-scroll">
         <table class="data-table">
           <thead>
             <tr>
@@ -1348,6 +1362,10 @@ export function renderAdminSettings(settingsData) {
       <div class="card-panel">
         <h2 style="font-size:18px;font-weight:800;margin:0 0 12px;">Identity, Contact &amp; Store Mode</h2>
         <form id="admin-general-settings-form">
+          ${[['support_hours','Support hours'],['business_identity','Store identity / registration information'],['founder_story','Founder story'],['sourcing_info','Product sourcing / authenticity evidence']].map(([key,label])=>`<div class="field-group"><label class="field-label" for="setting-${key}">${label}</label><textarea id="setting-${key}" name="${key}" class="textarea-field" rows="2">${escapeHtml(s[key] || '')}</textarea></div>`).join('')}
+          <div class="field-group"><label class="field-label" for="policies-json">Shipping, returns, refund timing and other policies (JSON)</label><textarea id="policies-json" name="policies_json" class="textarea-field" rows="8">${escapeHtml(JSON.stringify(s.policies || {},null,2))}</textarea><small>Each policy uses a key such as shipping or returns, with title and body. Enter merchant-approved facts.</small></div>
+          <div class="field-group"><label class="field-label" for="shipping-json">Shipping coverage and rates (JSON)</label><textarea id="shipping-json" name="shipping_zones_json" class="textarea-field" rows="6">${escapeHtml(JSON.stringify(s.shipping_zones || [],null,2))}</textarea></div>
+
           <div class="field-group">
             <label class="field-label">Store Name</label>
             <input type="text" name="store_name" class="input-field" value="${escapeHtml(s.store_name || 'Shop by SCHA')}" required />

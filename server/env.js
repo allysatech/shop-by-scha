@@ -2,6 +2,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 function loadEnvFiles() {
+  if (process.env.SCHA_ENV === 'test') return;
   const rootDir = path.join(__dirname, '..');
   for (const filename of ['.env.local', '.env']) {
     const filePath = path.join(rootDir, filename);

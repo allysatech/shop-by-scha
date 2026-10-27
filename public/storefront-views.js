@@ -15,6 +15,7 @@ export function renderStorefrontHeader(currentPath = '/') {
   const accountLabel = state.user ? (state.user.role === 'ADMIN' ? 'Admin Workspace' : 'My Account') : 'Customer Account';
 
   return `
+    ${sf?.sandbox ? '<div class="preview-mode-banner" role="status">TEST PREVIEW — Sample data. No real payments or purchases.</div>' : ''}
     ${sf?.isPreviewMode ? `
       <div class="preview-mode-banner" role="region" aria-label="Admin Draft Preview Mode">
         <div><strong>ADMIN DRAFT PREVIEW</strong> — Viewing unpublished homepage content changes.</div>
@@ -25,11 +26,11 @@ export function renderStorefrontHeader(currentPath = '/') {
       </div>
     ` : ''}
     ${b01.announcement_enabled && b01.announcement_text ? `
-      <div class="announcement-bar">${escapeHtml(b01.announcement_text)}</div>
+      <div class="announcement-bar">${escapeHtml(b01.announcement_text.startsWith('DESIGN PREVIEW & LAUNCH STOREFRONT') ? 'Your next favourite, curated by SCHA.' : b01.announcement_text)}</div>
     ` : ''}
     <header class="site-header">
       <div class="header-inner">
-        <div class="nav-left">
+        <div class="nav-left"><nav class="desktop-shop-nav" aria-label="Shop categories"><a href="/shop" data-nav>Shop All</a><a href="/collections/bags" data-nav>Bags</a><a href="/collections/eyewear" data-nav>Eyewear</a><a href="/collections/beauty" data-nav>Beauty</a><a href="/collections/footwear" data-nav>Footwear</a></nav>
           <button
             type="button"
             class="header-icon-btn side-menu-trigger"
@@ -114,7 +115,7 @@ export function renderStorefrontFooter() {
               ${escapeHtml(b01.footer_tagline || 'Playful editorial curation across eyewear, bags, beauty and footwear.')}
             </p>
             <p class="footer-currency-note">
-              Currency: MYR (RM) · Reporting time: Asia/Kuala_Lumpur
+              Prices in MYR (RM)
             </p>
           </div>
         </div>
@@ -122,7 +123,7 @@ export function renderStorefrontFooter() {
         <div class="footer-col footer-links-col">
           <h3 class="filter-group-title">Collections</h3>
           <div class="footer-links-list">
-            <a href="/shop" data-nav class="nav-link">Shop All References</a>
+            <a href="/shop" data-nav class="nav-link">Shop All</a>
             <a href="/collections/eyewear" data-nav class="nav-link">Eyewear</a>
             <a href="/collections/bags" data-nav class="nav-link">Bags</a>
             <a href="/collections/beauty" data-nav class="nav-link">Beauty</a>
@@ -167,7 +168,7 @@ export function renderStorefrontFooter() {
         </div>
       </div>
       <div class="footer-bottom-bar">
-        <span>© 2026 Shop by SCHA. DuitNow merchant QR + admin verification.</span>
+        <span>© 2026 Shop by SCHA. Curated by SCHA.</span>
         <div class="footer-bottom-links">
           <a href="/help/about" data-nav>About</a>
           <a href="/help/shipping" data-nav>Shipping</a>
@@ -182,11 +183,16 @@ export function renderStorefrontFooter() {
   `;
 }
 
+function productMedia(p,media=null) {
+ const m=media || p.media?.[0];
+ if(m?.document_preview_bounds && m.width && m.height){const [x,y,right,bottom]=m.document_preview_bounds;const w=right-x,h=bottom-y,pad=Math.max(w,h)*.04;return `<svg class="product-image-view" viewBox="${x-pad} ${y-pad} ${w+2*pad} ${h+2*pad}" role="img" aria-label="${escapeHtml(m.alt||p.title)}"><image href="${escapeHtml(m.path)}" width="${m.width}" height="${m.height}" /></svg>`;}
+ return `<img src="${escapeHtml(m?.path || p.primary_image)}" alt="${escapeHtml(m?.alt || p.title)}" loading="lazy" />`;
+}
 export function renderProductCard(p) {
   const isDraft = p.publish_status === 'draft';
   return `
     <article class="product-card">
-      <div class="product-card-badges">
+      <div class="product-card-badges" ${state.storefront?.sandbox || state.storefront?.isPreviewMode ? '' : 'hidden'}>
         ${p.reference_id ? `<span class="badge badge-ref">${escapeHtml(p.reference_id)}</span>` : '<span></span>'}
         ${p.is_demo
           ? `<span class="badge badge-demo">DEMO SELLABLE</span>`
@@ -196,7 +202,7 @@ export function renderProductCard(p) {
         }
       </div>
       <a href="/products/${encodeURIComponent(p.slug)}" data-nav class="product-card-media">
-        <img src="${escapeHtml(p.primary_image)}" alt="${escapeHtml(p.title)}" loading="lazy" />
+        ${productMedia(p)}
       </a>
       <p class="product-card-brand">${escapeHtml(p.brand)} · ${escapeHtml(p.category_slug)}</p>
       <h3 class="product-card-title">
@@ -204,14 +210,10 @@ export function renderProductCard(p) {
       </h3>
       <p class="product-card-price">${escapeHtml(p.price_formatted)}</p>
       <p class="product-card-meta">
-        ${p.is_sellable
-          ? `Stock available: ${p.total_available} unit(s)`
-          : p.duplicate_review_required
-            ? 'Review 05 / 06 for possible duplicate'
-            : 'Stock &amp; model: not confirmed'}
+        ${p.is_sellable ? (p.stock_type==='preorder'?'Preorder':'Available now') : 'Coming soon'}
       </p>
       <a href="/products/${encodeURIComponent(p.slug)}" data-nav class="product-card-link">
-        ${p.is_sellable ? 'Select variant &amp; buy &gt;' : 'View reference &gt;'}
+        ${p.is_sellable ? 'Select variant &amp; buy &gt;' : 'View product &gt;'}
       </a>
     </article>
   `;
@@ -273,10 +275,10 @@ export function renderHomePage() {
               ${newArrivalProducts.map((p) => `
                 <article class="new-arrival-card">
                   <a href="/products/${encodeURIComponent(p.slug)}" data-nav class="new-arrival-media">
-                    <img src="${escapeHtml(p.primary_image)}" alt="${escapeHtml(p.title)}" />
+                    ${productMedia(p)}
                   </a>
                   <h3 class="new-arrival-brand">${escapeHtml(p.brand)}</h3>
-                  <p class="new-arrival-title">${escapeHtml(p.title)}</p>
+                  <p class="new-arrival-title"><a href="/products/${encodeURIComponent(p.slug)}" data-nav>${escapeHtml(p.title)}</a></p>${p.price_minor !== null ? `<p class="product-card-price">${escapeHtml(p.price_formatted)}</p>` : ''}
                   <a href="/products/${encodeURIComponent(p.slug)}" data-nav class="btn-pill-view">
                     ${escapeHtml(newArr.cta_pill_text || 'View product')}
                   </a>
@@ -295,7 +297,7 @@ export function renderHomePage() {
               <span class="chrome-pill-tag">Editorial Story · Silver &amp; Pink Edit</span>
             ` : ''}
             <p class="editorial-lead">${escapeHtml(editorial.lead_paragraph || 'Your everyday edit, selected with a little personality.')}</p>
-            <p class="editorial-body">${escapeHtml(editorial.body_paragraph || '')}</p>
+            <p class="editorial-body">${escapeHtml((editorial.body_paragraph || '').replace('Every reference in our launch preview is preserved with its original proportions and detail.','Find the finishing touches that feel like you.'))}</p>
             <div class="editorial-decorative-word" aria-label="${escapeHtml(editorial.decorative_word || 'JUST SCHA')}">
               ${escapeHtml(editorial.decorative_word || 'JUST SCHA')}
             </div>
@@ -347,10 +349,10 @@ export function renderCollectionsOverviewPage() {
           <span class="badge badge-ref" style="margin-bottom:8px;">4 Curated Categories</span>
           <h1 class="page-title">Collections overview</h1>
           <p style="margin:6px 0 0;color:var(--text-muted);font-size:14px;">
-            Explore our supplied eyewear, bags, beauty and footwear references.
+            Explore eyewear, bags, beauty and footwear.
           </p>
         </div>
-        <a href="/shop" data-nav class="btn-capsule-secondary">View all 12 catalogue references &gt;</a>
+        <a href="/shop" data-nav class="btn-capsule-secondary">Shop All &gt;</a>
       </div>
 
       <div class="collections-pill-grid">
@@ -480,7 +482,7 @@ export function renderShopOrCollectionPage({ mode = 'shop', categorySlug = '', q
 
           ${colours.length > 0 ? `
             <div>
-              <h2 class="filter-group-title">Reference Colour</h2>
+              <h2 class="filter-group-title">Colour</h2>
               <button type="button" class="filter-btn ${!activeColour ? 'active' : ''}" data-filter-key="colour" data-filter-val="">
                 <span>All Colours</span>
               </button>
@@ -572,29 +574,18 @@ export function renderProductDetailPage(detailData, activeImageIndex = 0) {
       <div class="pdp-grid">
         <!-- Left: Contained Media Gallery (Slots P01-P05) -->
         <div>
-          <div class="pdp-main-media">
+          <div class="pdp-main-media" role="group" aria-label="Product gallery"><button type="button" class="image-zoom-trigger" data-action="zoom-product" aria-label="Zoom product image">Zoom +</button>
             <img id="pdp-active-img" src="${escapeHtml(currentImg.path)}" alt="${escapeHtml(currentImg.alt || p.title)}" />
           </div>
           <div class="pdp-thumbs-row">
-            ${[0, 1, 2, 3, 4].map((idx) => {
-              const m = mediaList[idx];
-              if (m) {
-                return `
-                  <button type="button" class="pdp-thumb ${idx === activeImageIndex ? 'active' : ''}" data-pdp-thumb="${idx}" aria-label="View image ${idx + 1}">
-                    <img src="${escapeHtml(m.path)}" alt="${escapeHtml(m.alt || `Gallery slot P0${idx + 1}`)}" />
-                  </button>
-                `;
-              }
-              return `
-                <div class="pdp-thumb" aria-label="Empty gallery slot P0${idx + 1}">P0${idx + 1}</div>
-              `;
-            }).join('')}
+            ${mediaList.map((m,idx)=>`<button type="button" class="pdp-thumb ${idx===activeImageIndex?'active':''}" data-pdp-thumb="${idx}" aria-label="View image ${idx+1}"><img src="${escapeHtml(m.path)}" alt="${escapeHtml(m.alt || p.title)}" /></button>`).join('')}
+
           </div>
         </div>
 
         <!-- Right: Product Details & Purchase / Draft Guardrail -->
         <div class="pdp-info-panel">
-          <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
+          <div style="display:${state.storefront?.sandbox || state.storefront?.isPreviewMode ? 'flex' : 'none'};flex-wrap:wrap;gap:8px;margin-bottom:12px;">
             ${p.reference_id ? `<span class="badge badge-ref">${ isDraft ? `DRAFT ${escapeHtml(p.reference_id)}` : escapeHtml(p.reference_id) }</span>` : ''}
             ${p.is_demo ? `<span class="badge badge-demo">DEMO SANDBOX ITEM</span>` : ''}
             ${p.duplicate_review_required ? `<span class="badge badge-review">DUPLICATE REVIEW 05 / 06</span>` : ''}
@@ -614,16 +605,12 @@ export function renderProductDetailPage(detailData, activeImageIndex = 0) {
           ${!canBuy ? `
             <div style="background:var(--pink-subtle);border:1px solid var(--border-warm);border-radius:var(--radius-md);padding:14px 16px;margin-bottom:18px;font-size:13.5px;">
               <p style="margin:0 0 6px;font-weight:700;color:var(--charcoal);">
-                Model, size, price and stock to confirm. Preview uses the supplied image.
+                This item is not available to order yet.
               </p>
               <p style="margin:0;color:var(--text-muted);">
-                ${escapeHtml(p.notes || 'Confirm price, stock, exact SKU, size/shade options and selling unit in Admin > Products before enabling purchase.')}
+                Please explore our available collection or contact us for more information.
               </p>
-              ${p.duplicate_review_required ? `
-                <p style="margin:8px 0 0;color:var(--rose-deep);font-weight:600;">
-                  Note: References 05 and 06 may depict the same pink top-handle bag. Review in <a href="/admin/products" data-nav style="text-decoration:underline;">Admin &gt; Products</a> before publishing.
-                </p>
-              ` : ''}
+
             </div>
 
             <div style="margin-bottom:16px;">
@@ -639,7 +626,7 @@ export function renderProductDetailPage(detailData, activeImageIndex = 0) {
               <span>Want to test buying this item or testing checkout?</span>
               <div style="display:flex;gap:8px;">
                 <a href="/admin/products/${p.id}" data-nav class="nav-link" style="color:var(--rose-deep);font-weight:700;">Confirm in Admin &gt;</a>
-                <button type="button" class="nav-btn" data-action="add-demo-sandbox" style="color:var(--rose-deep);font-weight:700;">+ Load Demo Cart SKU</button>
+                ${state.storefront?.sandbox ? `<button type="button" class="nav-btn" data-action="add-demo-sandbox" style="color:var(--rose-deep);font-weight:700;">+ Load Demo Cart SKU</button>` : ''}
               </div>
             </div>
           ` : `
@@ -691,12 +678,12 @@ export function renderProductDetailPage(detailData, activeImageIndex = 0) {
               </button>
               <div id="acc-specs" class="accordion-body">
                 <ul style="margin:0;padding-left:18px;">
-                  <li><strong>Reference ID:</strong> ${escapeHtml(p.reference_id || 'Custom')}</li>
-                  <li><strong>Brand:</strong> ${escapeHtml(p.brand)}</li>
+
+                  <li><strong>Brand:</strong> ${escapeHtml(p.brand)}</li>${Object.entries(p.specifications||{}).filter(([k,v])=>!['reference_id','brand','category','colour_reference'].includes(k) && typeof v!=='object' && !/to confirm|reference/i.test(String(v))).map(([k,v])=>`<li><strong>${escapeHtml(k.replaceAll('_',' '))}:</strong> ${escapeHtml(v)}</li>`).join('')}
                   <li><strong>Category:</strong> ${escapeHtml(p.category_slug)}</li>
                   <li><strong>Confirmed Model:</strong> ${escapeHtml(p.model || 'To confirm')}</li>
                   <li><strong>Sellable SKU:</strong> ${escapeHtml(p.sellable_sku || 'To confirm')}</li>
-                  <li><strong>Colour Reference:</strong> ${escapeHtml(p.reference_colour_description || 'To confirm')}</li>
+                  <li><strong>Colour:</strong> ${escapeHtml(p.reference_colour_description || 'To confirm')}</li>
                 </ul>
               </div>
             </div>
@@ -705,7 +692,7 @@ export function renderProductDetailPage(detailData, activeImageIndex = 0) {
                 <span>Shipping &amp; returns</span><span>+</span>
               </button>
               <div id="acc-ship" class="accordion-body">
-                ${escapeHtml(p.shipping_returns_note || 'Shipping is calculated by Malaysian state at checkout. Returns follow configured store policy.')}
+                ${escapeHtml(p.shipping_returns_note || 'See our shipping and returns pages for details before ordering.')}
               </div>
             </div>
           </div>
@@ -714,7 +701,7 @@ export function renderProductDetailPage(detailData, activeImageIndex = 0) {
 
       ${related.length > 0 ? `
         <section style="margin-top:56px;">
-          <h2 class="section-heading">Related products continue below &gt;</h2>
+          <h2 class="section-heading">You might also love</h2>
           <div class="product-grid">
             ${related.map(renderProductCard).join('')}
           </div>
@@ -750,9 +737,9 @@ export function renderCartPage() {
           </p>
           <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:12px;">
             <a href="/shop" data-nav class="btn-capsule-secondary">Continue shopping &gt;</a>
-            <button type="button" class="btn-capsule-primary" data-action="add-demo-sandbox">
+            ${state.storefront?.sandbox ? `<button type="button" class="btn-capsule-primary" data-action="add-demo-sandbox">
               + Load Demo Item (Product 01 · RM129.00 [DEMO])
-            </button>
+            </button>` : ''}
           </div>
         </div>
       ` : `
@@ -854,9 +841,9 @@ export function renderCheckoutPage(savedAddresses = []) {
 
       ${!paySetup.is_live_configured ? `
         <div style="background:var(--pink-soft);border:1px solid var(--pink-editorial);border-radius:var(--radius-md);padding:12px 18px;margin-bottom:20px;font-size:13px;">
-          <strong>Merchant QR Setup Notice:</strong> Live bank-issued DuitNow QR has not been uploaded in <a href="/admin/settings" data-nav style="text-decoration:underline;font-weight:700;">Admin Settings</a> yet.
+          <strong>Checkout is temporarily unavailable.</strong> Please contact SCHA for assistance.
           ${paySetup.demo_qr_enabled
-            ? 'Demo QR Checkout Mode is active using the non-scannable Q01 wireframe placeholder so you can test the order &amp; manual verification flow.'
+            ? 'Demo QR Checkout Mode is active using the non-scannable test QR placeholder so you can test the order &amp; manual verification flow.'
             : 'Checkout is disabled until the merchant configures their bank QR.'}
         </div>
       ` : ''}
@@ -1056,11 +1043,11 @@ export function renderOrderConfirmationPage(order, guestToken = '') {
           <form id="guest-verify-form">
             <div class="field-group">
               <label class="field-label" for="gv-order">Order Number</label>
-              <input id="gv-order" type="text" name="order_number" class="input-field" placeholder="e.g. SCHA-001" required />
+              <input id="gv-order" type="text" name="order_number" class="input-field" placeholder="Your order number" required />
             </div>
             <div class="field-group">
               <label class="field-label" for="gv-email">Checkout Email</label>
-              <input id="gv-email" type="email" name="email" class="input-field" placeholder="customer@example.com" required />
+              <input id="gv-email" type="email" name="email" class="input-field" placeholder="Email used at checkout" required />
             </div>
             <button type="submit" class="btn-capsule-primary" style="width:100%;">Verify &amp; Open Order</button>
           </form>
@@ -1084,7 +1071,7 @@ export function renderOrderConfirmationPage(order, guestToken = '') {
     stateSubcopy = 'Kami sedang menyemak bayaran untuk order ini. Confirmation will be sent after our admin team independently verifies the received transaction in our seller bank statement.';
   } else if (isNeedsResub) {
     stateHeadline = 'Action required: Payment receipt resubmission needed.';
-    stateSubcopy = `Admin note: "${order.resubmission_reason || 'Please upload a clearer receipt showing the transaction reference and amount.'}"`;
+    stateSubcopy = `A message from SCHA: "${order.resubmission_reason || 'Please upload a clearer receipt showing the transaction reference and amount.'}"`;
   } else if (isPaid) {
     stateHeadline = 'Payment confirmed.';
     stateSubcopy = 'Thank you! Our admin team has verified your payment in our bank records. Your official receipt and delivery progress are shown below.';
@@ -1144,7 +1131,7 @@ export function renderOrderConfirmationPage(order, guestToken = '') {
             <!-- Slot Q01: Preserves full QR quiet zone without cropping/text overlay -->
             <div class="qr-slot-frame ${payInstr.qr_image_path ? 'live-qr' : ''}">
               ${payInstr.qr_image_path ? `
-                <img src="${escapeHtml(payInstr.qr_image_path)}" alt="Seller Bank-Issued DuitNow Merchant QR" />
+                <img src="${escapeHtml(payInstr.qr_image_path)}" alt="Seller Bank-Issued DuitNow Merchant QR" /><a href="${escapeHtml(payInstr.qr_image_path)}" download="Shop-by-SCHA-DuitNow.png" class="btn-capsule-secondary">Download QR</a>
               ` : `
                 <div class="qr-placeholder-box">
                   <strong style="font-size:14px;">Q01 / BANK QR</strong>
@@ -1167,13 +1154,13 @@ export function renderOrderConfirmationPage(order, guestToken = '') {
                 <strong>Reference:</strong> #${escapeHtml(order.order_number)}
               </p>
               <p style="font-size:13.5px;color:var(--text-muted);margin:0 0 14px;">
-                <strong>Payment deadline:</strong> ${escapeHtml(formatKLDate(order.payment_deadline_at))} (Instruction v${escapeHtml(payInstr.version_number || 1)})
+                <strong>Payment deadline:</strong> ${escapeHtml(formatKLDate(order.payment_deadline_at))}
               </p>
 
               <ol style="margin:0 0 16px;padding-left:18px;font-size:13.5px;font-weight:600;line-height:1.7;">
                 <li>Scan / open the real merchant QR in your banking or e-wallet app</li>
                 <li>Check recipient name + exact MYR amount (${escapeHtml(order.total_formatted)})</li>
-                <li>Submit your bank transaction reference + receipt (JPG / PNG / PDF) below</li>
+                <li>Upload your bank transaction reference and receipt below. Payment will be reviewed within the stated ${escapeHtml(payInstr.review_window_hours || 24)}-hour review window.</li>
               </ol>
 
               <p style="font-size:12px;color:var(--text-muted);margin:0;">
@@ -1199,15 +1186,15 @@ export function renderOrderConfirmationPage(order, guestToken = '') {
                 <label class="field-label" for="sr-file">Upload receipt | JPG / PNG / PDF | Private</label>
                 <input id="sr-file" type="file" name="receipt" accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf" class="input-field" />
                 <span style="font-size:11.5px;color:var(--text-muted);">
-                  Stored privately. Accessible only to you and authorised store admins. (If testing without a file on hand, check "Attach sample demo receipt PNG" below)
+                  Your receipt is private and used to review this payment. Maximum file size: 10 MB.
                 </span>
               </div>
               <div class="field-group">
                 <label class="field-label" for="sr-time">Payment time (Optional)</label>
                 <input id="sr-time" type="text" name="declared_paid_at" class="input-field" value="${escapeHtml(formatKLDate(new Date().toISOString()))}" />
                 <label style="display:flex;align-items:center;gap:6px;font-size:12px;margin-top:6px;cursor:pointer;">
-                  <input type="checkbox" name="use_demo_sample_receipt" checked />
-                  <span>Attach valid demo receipt PNG if no local file selected</span>
+                  ${state.storefront?.sandbox ? '<input type="checkbox" name="use_demo_sample_receipt" />' : ''}
+                  ${state.storefront?.sandbox ? '<span>Attach sample receipt (test environment only)</span>' : ''}
                 </label>
               </div>
             </div>
@@ -1222,7 +1209,7 @@ export function renderOrderConfirmationPage(order, guestToken = '') {
       <!-- Order Details, Shipment Tracking & Timeline (Matches Wireframe Page 9) -->
       <div class="checkout-grid">
         <div class="card-panel">
-          <h2 style="font-size:18px;font-weight:800;margin:0 0 14px;">Order items &amp; snapshots</h2>
+          <h2 style="font-size:18px;font-weight:800;margin:0 0 14px;">Your order items</h2>
           ${(order.items || []).map((it) => `
             <div class="order-item-row">
               <img src="${escapeHtml(it.image_snapshot)}" alt="${escapeHtml(it.title_snapshot)}" class="order-item-thumb" />
@@ -1331,9 +1318,9 @@ export function renderCustomerAuthPage(mode = 'login') {
           </form>
           <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;align-items:center;font-size:13px;padding-top:12px;border-top:1px solid var(--border-warm);">
             <a href="/register" data-nav style="color:var(--rose-deep);font-weight:700;">New customer? Create account</a>
-            <button type="button" class="nav-btn" data-action="fill-demo-customer" style="font-size:12px;color:var(--text-muted);">
+            ${state.storefront?.sandbox ? `<button type="button" class="nav-btn" data-action="fill-demo-customer" style="font-size:12px;color:var(--text-muted);">
               Fill Demo Customer
-            </button>
+            </button>` : ''}
           </div>
         ` : mode === 'register' ? `
           <form id="customer-register-form">
@@ -1501,7 +1488,7 @@ export function renderCustomerAccountPage({ tab = 'orders', orders = [], address
           ` : tab === 'addresses' ? `
             <h2 style="font-size:20px;font-weight:800;margin:0 0 16px;">Shipping &amp; Billing Addresses</h2>
             <p style="font-size:13px;color:var(--text-muted);margin:0 0 18px;">
-              Past orders retain their original address snapshot at checkout.
+              Your previous orders keep the delivery address used when you placed them.
             </p>
             <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-bottom:24px;">
               ${addresses.map((a) => `
@@ -1551,7 +1538,7 @@ export function renderCustomerAccountPage({ tab = 'orders', orders = [], address
             <h2 style="font-size:20px;font-weight:800;margin:0 0 12px;">Payment info — DuitNow Merchant QR</h2>
             <div style="background:var(--pink-soft);padding:18px;border-radius:var(--radius-md);margin-bottom:20px;font-size:13.5px;">
               <p style="margin:0 0 8px;"><strong>Launch Payment Method:</strong> Static DuitNow merchant QR issued by the seller's bank, with manual verification by the shop administrator.</p>
-              <p style="margin:0;">There is no saved-card, card-number, expiry or CVV form in this launch scope. Each order records the seller's payment instruction snapshot and your private receipt submission status.</p>
+              <p style="margin:0;">Pay directly with DuitNow QR. Open an order to view payment instructions and the status of your receipt.</p>
             </div>
             <h3 style="font-size:16px;font-weight:800;margin:0 0 12px;">Your orders &amp; payment instructions</h3>
             ${orders.map((o) => `
@@ -1602,7 +1589,11 @@ export function renderCustomerAccountPage({ tab = 'orders', orders = [], address
 
 export function renderHelpPolicyPage(pageKey = 'about') {
   const policies = state.storefront?.store?.policies || {};
-  const entry = policies[pageKey] || policies.about || { title: 'Information', body: '' };
+  const store=state.storefront?.store || {};
+  let entry = policies[pageKey] || {title:pageKey.charAt(0).toUpperCase()+pageKey.slice(1),body:'Please contact us for more information before ordering.'};
+  if(pageKey==='contact') entry={title:'Contact SCHA',body:[store.support_email,store.support_phone,store.support_hours,store.business_address].filter(v=>v && !/To confirm|configure/i.test(v)).join('\n') || 'Our contact details will be available soon.'};
+  if(pageKey==='about')entry={title:'JUST SCHA',body:[store.founder_story || 'An edit of eyewear, bags, beauty and footwear, selected with a little personality.',store.business_identity,store.sourcing_info].filter(Boolean).join('\n\n')};
+  if(/configured return|to configure|demo|wireframe/i.test(entry.body||''))entry={...entry,body:'Please contact us to confirm these details before placing an order.'};
 
   return `
     ${renderStorefrontHeader(`/help/${pageKey}`)}

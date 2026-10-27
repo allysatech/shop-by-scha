@@ -1,3 +1,4 @@
+const {putObject}=require('./object-storage');
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
@@ -37,7 +38,7 @@ function detectMimeFromBuffer(buf, fallbackMime = '') {
   return null;
 }
 
-function savePrivateReceipt(fileBuffer, originalFilename = 'receipt.png') {
+async function savePrivateReceipt(fileBuffer, originalFilename = 'receipt.png') {
   if (!fileBuffer || fileBuffer.length === 0) {
     throw new Error('Receipt file is required.');
   }
@@ -52,7 +53,7 @@ function savePrivateReceipt(fileBuffer, originalFilename = 'receipt.png') {
   const safeOriginal = String(originalFilename).replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 120);
   const randomName = `receipt_${Date.now()}_${crypto.randomBytes(12).toString('hex')}${detected.ext}`;
   const fullPath = path.join(PRIVATE_RECEIPTS_DIR, randomName);
-  fs.writeFileSync(fullPath, fileBuffer);
+  await putObject('receipts/'+randomName,fileBuffer,detected.mime,fullPath);
 
   return {
     filename: randomName,
@@ -62,7 +63,7 @@ function savePrivateReceipt(fileBuffer, originalFilename = 'receipt.png') {
   };
 }
 
-function savePublicMedia(fileBuffer, originalFilename = 'image.png', prefix = 'media') {
+async function savePublicMedia(fileBuffer, originalFilename = 'image.png', prefix = 'media') {
   if (!fileBuffer || fileBuffer.length === 0) {
     throw new Error('Media file is empty.');
   }
@@ -75,7 +76,7 @@ function savePublicMedia(fileBuffer, originalFilename = 'image.png', prefix = 'm
   }
   const randomName = `${prefix}_${Date.now()}_${crypto.randomBytes(8).toString('hex')}${detected.ext}`;
   const fullPath = path.join(PUBLIC_UPLOADS_DIR, randomName);
-  fs.writeFileSync(fullPath, fileBuffer);
+  await putObject('media/'+randomName,fileBuffer,detected.mime,fullPath);
   return {
     publicPath: `/uploads/${randomName}`,
     mimeType: detected.mime,

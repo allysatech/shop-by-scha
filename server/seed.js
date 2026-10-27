@@ -1,3 +1,4 @@
+const {sandbox}=require('./runtime');
 const fs = require('node:fs');
 const path = require('node:path');
 const { db, runTransaction } = require('./db');
@@ -22,27 +23,30 @@ function ensureSamplePrivateReceipt() {
   return 'demo_receipt_scha_001.png';
 }
 
-function seedIfNeeded() {
-  const existingUsers = db.prepare('SELECT COUNT(*) AS count FROM users').get().count;
+async function seedIfNeeded() {
+  const existingUsers = (await db.prepare('SELECT COUNT(*) AS count FROM users').get()).count;
   if (existingUsers > 0) {
     return;
   }
 
+  if(!sandbox && ((await db.prepare('SELECT COUNT(*) AS n FROM products').get()).n>0 || (await db.prepare('SELECT COUNT(*) AS n FROM orders').get()).n>0))throw new Error('Existing business records require explicit migration/provisioning review.');
+  if(!sandbox && process.env.SCHA_PROVISION !== '1') throw new Error('Store setup required. Run the explicit provisioning command with merchant admin credentials.');
   const now = new Date('2026-10-26T06:00:00.000Z').toISOString();
   const cataloguePath = path.join(__dirname, '..', 'data', 'catalogue', 'catalogue.json');
   const catalogueData = JSON.parse(fs.readFileSync(cataloguePath, 'utf8'));
   const sampleReceiptFile = ensureSamplePrivateReceipt();
 
-  runTransaction(() => {
+  await runTransaction(async () => {
     // 1. Provision Initial Admin outside public registration
-    const adminEmail = process.env.ADMIN_EMAIL || 'admin@shopbyscha.my';
-    const adminPassword = process.env.ADMIN_PASSWORD || 'SchaAdmin!2026';
+    const adminEmail = String(process.env.ADMIN_EMAIL || 'admin@shopbyscha.my').trim().toLowerCase();
+    const adminPassword = process.env.ADMIN_PASSWORD || (sandbox ? 'SchaAdmin!2026' : '');
+    if(!adminPassword || adminPassword.length<12)throw new Error('Provide a unique ADMIN_PASSWORD of at least 12 characters.');
     const insertUser = db.prepare(`
       INSERT INTO users (email, password_hash, name, phone, role, mfa_enabled, mfa_code, is_demo, status, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?)
     `);
 
-    const adminRes = insertUser.run(
+    const adminRes = await insertUser.run(
       adminEmail,
       hashPassword(adminPassword),
       'SCHA Store Admin',
@@ -57,7 +61,7 @@ function seedIfNeeded() {
     const adminUserId = Number(adminRes.lastInsertRowid);
 
     // 2. Demo Customers
-    const custARes = insertUser.run(
+    const custARes = await insertUser.run(
       'customer@example.com',
       hashPassword('Customer!2026'),
       'Customer A [demo]',
@@ -71,7 +75,7 @@ function seedIfNeeded() {
     );
     const custAId = Number(custARes.lastInsertRowid);
 
-    const custBRes = insertUser.run(
+    const custBRes = await insertUser.run(
       'customer.b@example.com',
       hashPassword('Customer!2026'),
       'Customer B [demo]',
@@ -85,7 +89,7 @@ function seedIfNeeded() {
     );
     const custBId = Number(custBRes.lastInsertRowid);
 
-    const custCRes = insertUser.run(
+    const custCRes = await insertUser.run(
       'customer.c@example.com',
       hashPassword('Customer!2026'),
       'Customer C [demo]',
@@ -104,7 +108,7 @@ function seedIfNeeded() {
       INSERT INTO addresses (user_id, label, recipient_name, phone, line1, line2, postcode, city, state, country, is_default_shipping, is_default_billing, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Malaysia', ?, ?, ?, ?)
     `);
-    insertAddr.run(
+    await insertAddr.run(
       custAId,
       'Home (Bangsar)',
       'Customer A [demo]',
@@ -119,7 +123,7 @@ function seedIfNeeded() {
       now,
       now
     );
-    insertAddr.run(
+    await insertAddr.run(
       custAId,
       'Studio (PJ)',
       'Customer A [demo]',
@@ -134,7 +138,7 @@ function seedIfNeeded() {
       now,
       now
     );
-    insertAddr.run(
+    await insertAddr.run(
       custBId,
       'Home',
       'Customer B [demo]',
@@ -155,7 +159,7 @@ function seedIfNeeded() {
       INSERT INTO categories (slug, name, subtitle, description, image_path, slot_code, focal_point, sort_order)
       VALUES (?, ?, ?, ?, ?, ?, '50% 50%', ?)
     `);
-    insertCategory.run(
+    await insertCategory.run(
       'eyewear',
       'Eyewear',
       'Optical & Sculptural Frames',
@@ -164,7 +168,7 @@ function seedIfNeeded() {
       'C01',
       1
     );
-    insertCategory.run(
+    await insertCategory.run(
       'bags',
       'Bags',
       'Top-handle & Flap Silhouettes',
@@ -173,7 +177,7 @@ function seedIfNeeded() {
       'C02',
       2
     );
-    insertCategory.run(
+    await insertCategory.run(
       'beauty',
       'Beauty',
       'Complexion & Lip Edit',
@@ -182,7 +186,7 @@ function seedIfNeeded() {
       'C03',
       3
     );
-    insertCategory.run(
+    await insertCategory.run(
       'footwear',
       'Footwear',
       'Low-profile Everyday Sneakers',
@@ -223,7 +227,7 @@ function seedIfNeeded() {
         model_code: 'To confirm before publication',
         selling_unit: 'To confirm before publication'
       };
-      const prodRes = insertProduct.run(
+      const prodRes = await insertProduct.run(
         item.reference_id,
         item.reference_order,
         item.record_type, // 'draft_product_reference'
@@ -255,8 +259,8 @@ function seedIfNeeded() {
       );
       const productId = Number(prodRes.lastInsertRowid);
 
-      (item.images || []).forEach((img, idx) => {
-        insertMedia.run(
+      await Promise.all((item.images || []).map(async (img, idx) => {
+        await insertMedia.run(
           productId,
           `P0${idx + 1}`,
           '/' + img.path.replace(/^\/+/, ''),
@@ -267,13 +271,13 @@ function seedIfNeeded() {
           img.document_preview_bounds ? JSON.stringify(img.document_preview_bounds) : null,
           idx + 1
         );
-      });
+      }));
     }
 
     // 6. Demo Sandbox Sellable Product & SKUs (matching PDF Wireframe Pages 7, 8, 9, 10, 15:
     // Product 01 / Variant A [SCHA-001-A, RM129.00, On hand 12, Reserved 2, Available 10],
     // SCHA-002-A [On hand 4, Reserved 1, Available 3], SCHA-003-A [On hand 0, Reserved 0, Available 0])
-    const demoProdRes = db.prepare(`
+    const demoProdRes = await db.prepare(`
       INSERT INTO products (
         reference_id, reference_order, record_type, title, slug, brand, category_slug,
         description, specifications_json, shipping_returns_note, model, sellable_sku,
@@ -298,7 +302,7 @@ function seedIfNeeded() {
     `).run(now, now);
     const demoProductId = Number(demoProdRes.lastInsertRowid);
 
-    insertMedia.run(
+    await insertMedia.run(
       demoProductId,
       'P01',
       '/images/08_jacquemus_pink_flap_handbag.png',
@@ -316,7 +320,7 @@ function seedIfNeeded() {
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, 1, 1, ?, ?)
     `);
 
-    const v1Res = insertVariant.run(
+    const v1Res = await insertVariant.run(
       demoProductId,
       'SCHA-001-A',
       'Variant A',
@@ -330,7 +334,7 @@ function seedIfNeeded() {
     );
     const var1Id = Number(v1Res.lastInsertRowid);
 
-    const v2Res = insertVariant.run(
+    const v2Res = await insertVariant.run(
       demoProductId,
       'SCHA-002-A',
       'Variant B (Low Stock)',
@@ -344,7 +348,7 @@ function seedIfNeeded() {
     );
     const var2Id = Number(v2Res.lastInsertRowid);
 
-    const v3Res = insertVariant.run(
+    const v3Res = await insertVariant.run(
       demoProductId,
       'SCHA-003-A',
       'Variant C (Sold Out)',
@@ -364,12 +368,12 @@ function seedIfNeeded() {
         movement_type, reason, order_id, actor_user_id, actor_email, created_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
-    insertMovement.run(var1Id, 'SCHA-001-A', 12, 2, 0, 12, 0, 2, 'initial_seed', 'Initial DEMO inventory seed (Wireframe Page 15)', null, adminUserId, adminEmail, now);
-    insertMovement.run(var2Id, 'SCHA-002-A', 4, 1, 0, 4, 0, 1, 'initial_seed', 'Initial DEMO inventory seed (Wireframe Page 15)', null, adminUserId, adminEmail, now);
-    insertMovement.run(var3Id, 'SCHA-003-A', 0, 0, 0, 0, 0, 0, 'initial_seed', 'Initial DEMO inventory seed (Wireframe Page 15)', null, adminUserId, adminEmail, now);
+    await insertMovement.run(var1Id, 'SCHA-001-A', 12, 2, 0, 12, 0, 2, 'initial_seed', 'Initial DEMO inventory seed (Wireframe Page 15)', null, adminUserId, adminEmail, now);
+    await insertMovement.run(var2Id, 'SCHA-002-A', 4, 1, 0, 4, 0, 1, 'initial_seed', 'Initial DEMO inventory seed (Wireframe Page 15)', null, adminUserId, adminEmail, now);
+    await insertMovement.run(var3Id, 'SCHA-003-A', 0, 0, 0, 0, 0, 0, 'initial_seed', 'Initial DEMO inventory seed (Wireframe Page 15)', null, adminUserId, adminEmail, now);
 
     // 7. Payment Instruction Version 1 (Unconfigured Live QR + Demo QR Placeholder Q01 enabled for testing)
-    const payVerRes = db.prepare(`
+    const payVerRes = await db.prepare(`
       INSERT INTO payment_instruction_versions (
         version_number, is_live_configured, demo_qr_enabled, recipient_name, bank_name, account_number,
         manual_transfer_enabled, qr_image_path, payment_deadline_minutes, review_window_hours,
@@ -444,7 +448,7 @@ function seedIfNeeded() {
 
     // Order #SCHA-001: Paid / Processing (RM137.00 [demo]) - matches Page 9 & 15
     const guestTok1 = 'demo-guest-token-scha-001-verified';
-    const o1Res = insertOrder.run(
+    const o1Res = await insertOrder.run(
       'SCHA-001',
       custAId,
       'customer@example.com',
@@ -475,20 +479,20 @@ function seedIfNeeded() {
       '2026-10-25T10:20:00.000Z'
     );
     const o1Id = Number(o1Res.lastInsertRowid);
-    insertOrderItem.run(o1Id, demoProductId, var1Id, 'SCHA-001-A', 'Variant A', 12900, 1, 12900);
-    insertEvent.run(o1Id, 'order_created', 'awaiting_payment', 'unfulfilled', 'Order received', 'Awaiting payment via DuitNow QR', 'CUSTOMER', 'customer@example.com', 1, '2026-10-25T09:30:00.000Z');
-    insertEvent.run(o1Id, 'receipt_submitted', 'under_review', 'unfulfilled', 'Receipt submitted', 'Payment under review (Ref: CUST-REF-8821)', 'CUSTOMER', 'customer@example.com', 1, '2026-10-25T09:42:00.000Z');
-    insertEvent.run(o1Id, 'payment_confirmed', 'paid', 'unfulfilled', 'Payment confirmed', 'Admin verified received transaction in seller bank records (Ref: DNQR-DEMO-20261025-001)', 'ADMIN', adminEmail, 1, '2026-10-25T10:15:00.000Z');
-    insertEvent.run(o1Id, 'fulfilment_processing', 'paid', 'processing', 'Preparing your order', 'Delivery: Processing', 'ADMIN', adminEmail, 1, '2026-10-25T10:20:00.000Z');
+    await insertOrderItem.run(o1Id, demoProductId, var1Id, 'SCHA-001-A', 'Variant A', 12900, 1, 12900);
+    await insertEvent.run(o1Id, 'order_created', 'awaiting_payment', 'unfulfilled', 'Order received', 'Awaiting payment via DuitNow QR', 'CUSTOMER', 'customer@example.com', 1, '2026-10-25T09:30:00.000Z');
+    await insertEvent.run(o1Id, 'receipt_submitted', 'under_review', 'unfulfilled', 'Receipt submitted', 'Payment under review (Ref: CUST-REF-8821)', 'CUSTOMER', 'customer@example.com', 1, '2026-10-25T09:42:00.000Z');
+    await insertEvent.run(o1Id, 'payment_confirmed', 'paid', 'unfulfilled', 'Payment confirmed', 'Admin verified received transaction in seller bank records (Ref: DNQR-DEMO-20261025-001)', 'ADMIN', adminEmail, 1, '2026-10-25T10:15:00.000Z');
+    await insertEvent.run(o1Id, 'fulfilment_processing', 'paid', 'processing', 'Preparing your order', 'Delivery: Processing', 'ADMIN', adminEmail, 1, '2026-10-25T10:20:00.000Z');
 
-    const sub1Res = db.prepare(`
+    const sub1Res = await db.prepare(`
       INSERT INTO payment_submissions (
         order_id, declared_reference, declared_amount_minor, declared_paid_at,
         receipt_filename, receipt_original_name, receipt_mime_type, receipt_size_bytes,
         submitted_after_deadline, amount_mismatch, status, submitted_by_role, created_at
       ) VALUES (?, 'CUST-REF-8821', 13700, '2026-10-25T09:41:00.000Z', ?, 'duitnow_receipt_scha001.png', 'image/png', 68, 0, 0, 'approved', 'CUSTOMER', '2026-10-25T09:42:00.000Z')
     `).run(o1Id, sampleReceiptFile);
-    db.prepare(`
+    await db.prepare(`
       INSERT INTO payment_reviews (
         order_id, submission_id, action, received_amount_minor, actual_bank_reference,
         bank_records_checked, audit_note, actor_user_id, actor_email, created_at
@@ -496,7 +500,7 @@ function seedIfNeeded() {
     `).run(o1Id, Number(sub1Res.lastInsertRowid), adminUserId, adminEmail);
 
     // Order #SCHA-002: Paid / Shipped (RM258.00 [demo]) - matches Page 11 & 13
-    const o2Res = insertOrder.run(
+    const o2Res = await insertOrder.run(
       'SCHA-002',
       custAId,
       'customer@example.com',
@@ -527,17 +531,17 @@ function seedIfNeeded() {
       '2026-10-21T09:00:00.000Z'
     );
     const o2Id = Number(o2Res.lastInsertRowid);
-    insertOrderItem.run(o2Id, demoProductId, var1Id, 'SCHA-001-A', 'Variant A', 12900, 2, 25800);
-    insertEvent.run(o2Id, 'order_created', 'awaiting_payment', 'unfulfilled', 'Order received', 'Awaiting payment', 'CUSTOMER', 'customer@example.com', 1, '2026-10-20T12:00:00.000Z');
-    insertEvent.run(o2Id, 'payment_confirmed', 'paid', 'unfulfilled', 'Payment confirmed', 'Admin verified received transaction (Ref: DNQR-DEMO-20261020-002)', 'ADMIN', adminEmail, 1, '2026-10-20T14:00:00.000Z');
-    insertEvent.run(o2Id, 'order_shipped', 'paid', 'shipped', 'Order shipped', 'Shipped via PosLaju Malaysia (Tracking: PL-MY-88291044)', 'ADMIN', adminEmail, 1, '2026-10-21T09:00:00.000Z');
-    db.prepare(`
+    await insertOrderItem.run(o2Id, demoProductId, var1Id, 'SCHA-001-A', 'Variant A', 12900, 2, 25800);
+    await insertEvent.run(o2Id, 'order_created', 'awaiting_payment', 'unfulfilled', 'Order received', 'Awaiting payment', 'CUSTOMER', 'customer@example.com', 1, '2026-10-20T12:00:00.000Z');
+    await insertEvent.run(o2Id, 'payment_confirmed', 'paid', 'unfulfilled', 'Payment confirmed', 'Admin verified received transaction (Ref: DNQR-DEMO-20261020-002)', 'ADMIN', adminEmail, 1, '2026-10-20T14:00:00.000Z');
+    await insertEvent.run(o2Id, 'order_shipped', 'paid', 'shipped', 'Order shipped', 'Shipped via PosLaju Malaysia (Tracking: PL-MY-88291044)', 'ADMIN', adminEmail, 1, '2026-10-21T09:00:00.000Z');
+    await db.prepare(`
       INSERT INTO shipments (order_id, courier_name, tracking_number, tracking_url, shipped_at, actor_email, created_at)
       VALUES (?, 'PosLaju Malaysia', 'PL-MY-88291044', 'https://tracking.pos.com.my/?trackingNo=PL-MY-88291044', '2026-10-21T09:00:00.000Z', ?, '2026-10-21T09:00:00.000Z')
     `).run(o2Id, adminEmail);
 
     // Order #SCHA-003: Under review / Unfulfilled (RM129.00 [demo]) - matches Page 10 & 11
-    const o3Res = insertOrder.run(
+    const o3Res = await insertOrder.run(
       'SCHA-003',
       custAId,
       'customer@example.com',
@@ -568,23 +572,23 @@ function seedIfNeeded() {
       '2026-10-26T04:10:00.000Z'
     );
     const o3Id = Number(o3Res.lastInsertRowid);
-    insertOrderItem.run(o3Id, demoProductId, var1Id, 'SCHA-001-A', 'Variant A', 12900, 1, 12900);
-    insertEvent.run(o3Id, 'order_created', 'awaiting_payment', 'unfulfilled', 'Order received', 'Awaiting payment via DuitNow QR', 'CUSTOMER', 'customer@example.com', 1, '2026-10-26T04:00:00.000Z');
-    insertEvent.run(o3Id, 'receipt_submitted', 'under_review', 'unfulfilled', 'Receipt submitted', 'Payment under review — awaiting independent admin verification', 'CUSTOMER', 'customer@example.com', 1, '2026-10-26T04:10:00.000Z');
-    db.prepare(`
+    await insertOrderItem.run(o3Id, demoProductId, var1Id, 'SCHA-001-A', 'Variant A', 12900, 1, 12900);
+    await insertEvent.run(o3Id, 'order_created', 'awaiting_payment', 'unfulfilled', 'Order received', 'Awaiting payment via DuitNow QR', 'CUSTOMER', 'customer@example.com', 1, '2026-10-26T04:00:00.000Z');
+    await insertEvent.run(o3Id, 'receipt_submitted', 'under_review', 'unfulfilled', 'Receipt submitted', 'Payment under review — awaiting independent admin verification', 'CUSTOMER', 'customer@example.com', 1, '2026-10-26T04:10:00.000Z');
+    await db.prepare(`
       INSERT INTO payment_submissions (
         order_id, declared_reference, declared_amount_minor, declared_paid_at,
         receipt_filename, receipt_original_name, receipt_mime_type, receipt_size_bytes,
         submitted_after_deadline, amount_mismatch, status, submitted_by_role, created_at
       ) VALUES (?, 'MY-DUITNOW-99301', 12900, '2026-10-26T04:09:00.000Z', ?, 'receipt_scha003.png', 'image/png', 68, 0, 0, 'under_review', 'CUSTOMER', '2026-10-26T04:10:00.000Z')
     `).run(o3Id, sampleReceiptFile);
-    db.prepare(`
+    await db.prepare(`
       INSERT INTO stock_reservations (order_id, variant_id, sku, quantity, status, payment_deadline_at, review_window_expires_at, created_at, updated_at)
       VALUES (?, ?, 'SCHA-001-A', 1, 'active_review_hold', ?, ?, '2026-10-26T04:00:00.000Z', '2026-10-26T04:10:00.000Z')
     `).run(o3Id, var1Id, deadlineFuture, deadlineFuture);
 
     // Order #SCHA-004: Awaiting payment / Unfulfilled (Customer B [demo])
-    const o4Res = insertOrder.run(
+    const o4Res = await insertOrder.run(
       'SCHA-004',
       custBId,
       'customer.b@example.com',
@@ -615,15 +619,15 @@ function seedIfNeeded() {
       '2026-10-26T05:15:00.000Z'
     );
     const o4Id = Number(o4Res.lastInsertRowid);
-    insertOrderItem.run(o4Id, demoProductId, var1Id, 'SCHA-001-A', 'Variant A', 12900, 1, 12900);
-    insertEvent.run(o4Id, 'order_created', 'awaiting_payment', 'unfulfilled', 'Order received', 'Awaiting payment via DuitNow QR', 'CUSTOMER', 'customer.b@example.com', 1, '2026-10-26T05:15:00.000Z');
-    db.prepare(`
+    await insertOrderItem.run(o4Id, demoProductId, var1Id, 'SCHA-001-A', 'Variant A', 12900, 1, 12900);
+    await insertEvent.run(o4Id, 'order_created', 'awaiting_payment', 'unfulfilled', 'Order received', 'Awaiting payment via DuitNow QR', 'CUSTOMER', 'customer.b@example.com', 1, '2026-10-26T05:15:00.000Z');
+    await db.prepare(`
       INSERT INTO stock_reservations (order_id, variant_id, sku, quantity, status, payment_deadline_at, review_window_expires_at, created_at, updated_at)
       VALUES (?, ?, 'SCHA-001-A', 1, 'active_payment_hold', ?, NULL, '2026-10-26T05:15:00.000Z', '2026-10-26T05:15:00.000Z')
     `).run(o4Id, var1Id, deadlineFuture);
 
     // Order #SCHA-005: Needs resubmission / Unfulfilled (Customer C [demo])
-    const o5Res = insertOrder.run(
+    const o5Res = await insertOrder.run(
       'SCHA-005',
       custCId,
       'customer.c@example.com',
@@ -654,11 +658,11 @@ function seedIfNeeded() {
       '2026-10-25T17:00:00.000Z'
     );
     const o5Id = Number(o5Res.lastInsertRowid);
-    insertOrderItem.run(o5Id, demoProductId, var2Id, 'SCHA-002-A', 'Variant B (Low Stock)', 12900, 1, 12900);
-    insertEvent.run(o5Id, 'order_created', 'awaiting_payment', 'unfulfilled', 'Order received', 'Awaiting payment', 'CUSTOMER', 'customer.c@example.com', 1, '2026-10-25T16:00:00.000Z');
-    insertEvent.run(o5Id, 'receipt_submitted', 'under_review', 'unfulfilled', 'Receipt submitted', 'Payment under review', 'CUSTOMER', 'customer.c@example.com', 1, '2026-10-25T16:20:00.000Z');
-    insertEvent.run(o5Id, 'resubmission_requested', 'needs_resubmission', 'unfulfilled', 'Resubmission requested', 'Uploaded image was cropped and the DuitNow reference ID was not visible. Please upload the full transaction receipt PDF or screenshot.', 'ADMIN', adminEmail, 1, '2026-10-25T17:00:00.000Z');
-    db.prepare(`
+    await insertOrderItem.run(o5Id, demoProductId, var2Id, 'SCHA-002-A', 'Variant B (Low Stock)', 12900, 1, 12900);
+    await insertEvent.run(o5Id, 'order_created', 'awaiting_payment', 'unfulfilled', 'Order received', 'Awaiting payment', 'CUSTOMER', 'customer.c@example.com', 1, '2026-10-25T16:00:00.000Z');
+    await insertEvent.run(o5Id, 'receipt_submitted', 'under_review', 'unfulfilled', 'Receipt submitted', 'Payment under review', 'CUSTOMER', 'customer.c@example.com', 1, '2026-10-25T16:20:00.000Z');
+    await insertEvent.run(o5Id, 'resubmission_requested', 'needs_resubmission', 'unfulfilled', 'Resubmission requested', 'Uploaded image was cropped and the DuitNow reference ID was not visible. Please upload the full transaction receipt PDF or screenshot.', 'ADMIN', adminEmail, 1, '2026-10-25T17:00:00.000Z');
+    await db.prepare(`
       INSERT INTO stock_reservations (order_id, variant_id, sku, quantity, status, payment_deadline_at, review_window_expires_at, created_at, updated_at)
       VALUES (?, ?, 'SCHA-002-A', 1, 'active_review_hold', ?, ?, '2026-10-25T16:00:00.000Z', '2026-10-25T17:00:00.000Z')
     `).run(o5Id, var2Id, deadlineFuture, deadlineFuture);
@@ -685,7 +689,7 @@ function seedIfNeeded() {
       show_chrome_accent: true,
       visible: true
     });
-    insertContent.run('H01_H02', 'H01 / H02 — Layered Hero + Display Text + CTA', heroContent, heroContent, adminEmail, now, now);
+    await insertContent.run('H01_H02', 'H01 / H02 — Layered Hero + Display Text + CTA', heroContent, heroContent, adminEmail, now, now);
 
     const newArrivalsContent = JSON.stringify({
       slot_range: 'N01-N03',
@@ -694,91 +698,91 @@ function seedIfNeeded() {
       selected_references: ['REF-08', 'REF-01', 'REF-09'],
       visible: true
     });
-    insertContent.run('N01_N03', 'N01–N03 — Pink New Arrivals Product Selection', newArrivalsContent, newArrivalsContent, adminEmail, now, now);
+    await insertContent.run('N01_N03', 'N01–N03 — Pink New Arrivals Product Selection', newArrivalsContent, newArrivalsContent, adminEmail, now, now);
 
     const editorialContent = JSON.stringify({
       slot_range: 'E01-E03',
       decorative_word: 'JUST SCHA',
       lead_paragraph: 'Your everyday edit, selected with a little personality.',
-      body_paragraph: 'An asymmetrical curation of sculptural frames, statement pink mini bags, soft-focus beauty and low-profile sneakers. Every reference in our launch preview is preserved with its original proportions and detail.',
+      body_paragraph: 'Sculptural frames, statement bags, beauty favourites and everyday sneakers - an edit with a little personality. Find the finishing touches that feel like you.',
       show_chrome_cue: true,
       images: [
-        {
-          slot: 'E01',
-          reference_id: 'REF-04',
-          path: '/images/04_gentle_monster_silver_sculptural_frame.png',
-          alt: 'Gentle Monster Silver Sculptural Frame — Chrome/Silver Visual Cue',
-          caption: 'Silver Sculptural Cue · REF-04',
-          focal_point: '50% 50%'
-        },
-        {
-          slot: 'E02',
-          reference_id: 'REF-02',
-          path: '/images/02_gentle_monster_black_cat_eye_eyewear.png',
-          alt: 'Gentle Monster Black Cat-eye Eyewear — Editorial Portrait',
-          caption: 'Editorial Eyewear · REF-02',
-          focal_point: '50% 50%'
-        },
-        {
-          slot: 'E03',
-          reference_id: 'REF-05',
-          path: '/images/05_jacquemus_pink_mini_bag_lifestyle.png',
-          alt: 'Jacquemus Pink Mini Bag — Lifestyle Reference',
-          caption: 'Pink Mini Bag · REF-05',
-          focal_point: '50% 50%'
-        }
-      ],
+      {
+        slot: 'E01',
+        reference_id: 'REF-04',
+        path: '/images/04_gentle_monster_silver_sculptural_frame.png',
+        alt: 'Gentle Monster Silver Sculptural Frame — Chrome/Silver Visual Cue',
+        caption: 'Silver Sculptural Cue · REF-04',
+        focal_point: '50% 50%'
+      },
+      {
+        slot: 'E02',
+        reference_id: 'REF-02',
+        path: '/images/02_gentle_monster_black_cat_eye_eyewear.png',
+        alt: 'Gentle Monster Black Cat-eye Eyewear — Editorial Portrait',
+        caption: 'Editorial Eyewear · REF-02',
+        focal_point: '50% 50%'
+      },
+      {
+        slot: 'E03',
+        reference_id: 'REF-05',
+        path: '/images/05_jacquemus_pink_mini_bag_lifestyle.png',
+        alt: 'Jacquemus Pink Mini Bag — Lifestyle Reference',
+        caption: 'Pink Mini Bag · REF-05',
+        focal_point: '50% 50%'
+      }],
+
       visible: true
     });
-    insertContent.run('E01_E03', 'E01–E03 — Editorial Collage + JUST SCHA Copy', editorialContent, editorialContent, adminEmail, now, now);
+    await insertContent.run('E01_E03', 'E01–E03 — Editorial Collage + JUST SCHA Copy', editorialContent, editorialContent, adminEmail, now, now);
 
     const collectionsContent = JSON.stringify({
       slot_range: 'C01-C04',
       heading: 'Our collections',
       items: [
-        { slot: 'C01', slug: 'eyewear', title: 'Eyewear', image_path: '/images/03_gentle_monster_silver_rectangular_frame.png', alt: 'Eyewear Collection', link: '/collections/eyewear', focal_point: '50% 50%' },
-        { slot: 'C02', slug: 'bags', title: 'Bags', image_path: '/images/06_jacquemus_pink_top_handle_bag.png', alt: 'Bags Collection', link: '/collections/bags', focal_point: '50% 50%' },
-        { slot: 'C03', slug: 'beauty', title: 'Beauty', image_path: '/images/10_charlotte_tilbury_airbrush_flawless_finish_powder.png', alt: 'Beauty Collection', link: '/collections/beauty', focal_point: '50% 50%' },
-        { slot: 'C04', slug: 'footwear', title: 'Footwear', image_path: '/images/12_onitsuka_tiger_pink_sneakers.png', alt: 'Footwear Collection', link: '/collections/footwear', focal_point: '50% 50%' }
-      ],
+      { slot: 'C01', slug: 'eyewear', title: 'Eyewear', image_path: '/images/03_gentle_monster_silver_rectangular_frame.png', alt: 'Eyewear Collection', link: '/collections/eyewear', focal_point: '50% 50%' },
+      { slot: 'C02', slug: 'bags', title: 'Bags', image_path: '/images/06_jacquemus_pink_top_handle_bag.png', alt: 'Bags Collection', link: '/collections/bags', focal_point: '50% 50%' },
+      { slot: 'C03', slug: 'beauty', title: 'Beauty', image_path: '/images/10_charlotte_tilbury_airbrush_flawless_finish_powder.png', alt: 'Beauty Collection', link: '/collections/beauty', focal_point: '50% 50%' },
+      { slot: 'C04', slug: 'footwear', title: 'Footwear', image_path: '/images/12_onitsuka_tiger_pink_sneakers.png', alt: 'Footwear Collection', link: '/collections/footwear', focal_point: '50% 50%' }],
+
       visible: true
     });
-    insertContent.run('C01_C04', 'C01–C04 — Eyewear / Bags / Beauty / Footwear', collectionsContent, collectionsContent, adminEmail, now, now);
+    await insertContent.run('C01_C04', 'C01–C04 — Eyewear / Bags / Beauty / Footwear', collectionsContent, collectionsContent, adminEmail, now, now);
 
     const b01Content = JSON.stringify({
       slot: 'B01',
       announcement_enabled: true,
-      announcement_text: 'DESIGN PREVIEW & LAUNCH STOREFRONT · MYR (RM) · DUITNOW QR MANUAL ADMIN VERIFICATION',
+      announcement_text: 'Your next favourite, curated by SCHA.',
       campaign_strip_enabled: false,
       campaign_strip_text: '',
       footer_tagline: 'Playful editorial curation across eyewear, bags, beauty and footwear.',
       newsletter_enabled: true
     });
-    insertContent.run('B01_POLICIES', 'B01 — Optional Campaign / Announcement / Footer Content', b01Content, b01Content, adminEmail, now, now);
+    await insertContent.run('B01_POLICIES', 'B01 — Optional Campaign / Announcement / Footer Content', b01Content, b01Content, adminEmail, now, now);
 
     // 10. Store Settings
     const shippingZones = JSON.stringify([
-      {
-        id: 'west-my',
-        name: 'Peninsular Malaysia (West Malaysia)',
-        states: [
-          'Wilayah Persekutuan Kuala Lumpur', 'Wilayah Persekutuan Putrajaya', 'Selangor',
-          'Pulau Pinang', 'Johor', 'Perak', 'Melaka', 'Negeri Sembilan', 'Pahang',
-          'Kedah', 'Kelantan', 'Terengganu', 'Perlis'
-        ],
-        methods: [
-          { id: 'std-west', name: 'Standard Tracked Delivery (West MY — Demo Rate)', rate_minor: 800, lead_time: '2–4 business days', is_demo: true }
-        ]
-      },
-      {
-        id: 'east-my',
-        name: 'East Malaysia (Sabah, Sarawak & Labuan)',
-        states: ['Sabah', 'Sarawak', 'Wilayah Persekutuan Labuan'],
-        methods: [
-          { id: 'std-east', name: 'Standard Air Parcel (East MY — Demo Rate)', rate_minor: 1500, lead_time: '4–7 business days', is_demo: true }
-        ]
-      }
-    ]);
+    {
+      id: 'west-my',
+      name: 'Peninsular Malaysia (West Malaysia)',
+      states: [
+      'Wilayah Persekutuan Kuala Lumpur', 'Wilayah Persekutuan Putrajaya', 'Selangor',
+      'Pulau Pinang', 'Johor', 'Perak', 'Melaka', 'Negeri Sembilan', 'Pahang',
+      'Kedah', 'Kelantan', 'Terengganu', 'Perlis'],
+
+      methods: [
+      { id: 'std-west', name: 'Standard Tracked Delivery (West MY — Demo Rate)', rate_minor: 800, lead_time: '2–4 business days', is_demo: true }]
+
+    },
+    {
+      id: 'east-my',
+      name: 'East Malaysia (Sabah, Sarawak & Labuan)',
+      states: ['Sabah', 'Sarawak', 'Wilayah Persekutuan Labuan'],
+      methods: [
+      { id: 'std-east', name: 'Standard Air Parcel (East MY — Demo Rate)', rate_minor: 1500, lead_time: '4–7 business days', is_demo: true }]
+
+    }]
+    );
 
     const taxConfig = JSON.stringify({
       tax_enabled: false,
@@ -818,7 +822,7 @@ function seedIfNeeded() {
       }
     });
 
-    db.prepare(`
+    await db.prepare(`
       INSERT INTO store_settings (
         id, store_name, tagline, support_email, support_phone, business_address,
         currency, timezone, design_preview_enabled, shipping_zones_json, tax_config_json,
@@ -831,11 +835,13 @@ function seedIfNeeded() {
       )
     `).run(shippingZones, taxConfig, policies, now);
   });
-}
+  if(!sandbox) await runTransaction(async()=>{
+    for(const table of ['notification_jobs','status_events','shipments','manual_refunds','payment_reviews','payment_submissions','stock_reservations','order_items','stock_movements']) await db.prepare(`DELETE FROM ${table}`).run();
+    await db.prepare('DELETE FROM orders').run();await db.prepare('DELETE FROM product_variants WHERE is_demo = 1').run();await db.prepare('DELETE FROM products WHERE is_demo = 1').run();await db.prepare('DELETE FROM addresses').run();await db.prepare('DELETE FROM users WHERE is_demo = 1').run();
+    await db.prepare("UPDATE payment_instruction_versions SET demo_qr_enabled=0, is_live_configured=0, recipient_name='', bank_name='', qr_image_path=NULL").run();
+    await db.prepare("UPDATE store_settings SET design_preview_enabled=0, support_email='', support_phone='', business_address='', shipping_zones_json='[]', policies_json='{}'").run();
+  });
 
-if (require.main === module) {
-  seedIfNeeded();
-  console.log('Database seeded successfully.');
 }
 
 module.exports = { seedIfNeeded };

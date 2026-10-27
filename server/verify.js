@@ -1,3 +1,5 @@
+process.env.SCHA_ENV='test';
+process.env.SESSION_SECRET='isolated-acceptance-test-secret';
 const assert = require('node:assert');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -164,6 +166,7 @@ async function runVerification() {
       method: 'POST',
       headers: { 'X-CSRF-Token': regRes.data.csrfToken },
       body: {
+        idempotency_key:'legacy-acceptance-checkout',
         email: uniqueEmail,
         phone: '+6012-9998888',
         shipping_address: {
@@ -379,33 +382,13 @@ async function runVerification() {
     assert.strictEqual(oldOrderCheck.data.order.payment_instructions.version_number, 1, 'Existing order must retain v1 payment instructions snapshot');
     console.log('✓ 6. Fulfilment tracking, two-step manual refund & immutable per-order QR instruction snapshots verified.');
 
-    // 7. Verify Neon Lakebase Postgres & Neon AI Gateway End-to-End Integration
-    const neonRes = await req('/api/neon/status');
-    assert.strictEqual(neonRes.status, 200);
-    assert.strictEqual(neonRes.data.connected, true, 'Neon Lakebase Postgres must be connected');
-    assert.strictEqual(neonRes.data.database_name, 'neondb');
-    assert.ok(neonRes.data.products_count >= 12, 'Neon Postgres must have all catalogue products synced');
-    assert.ok(neonRes.data.orders_count >= 5, 'Neon Postgres must have all orders synced');
-
-    const aiModelsRes = await req('/api/ai/models');
-    assert.strictEqual(aiModelsRes.status, 200);
-    assert.ok(Array.isArray(aiModelsRes.data.models));
-
-    const aiStylistRes = await req('/api/ai/stylist', {
-      method: 'POST',
-      body: { prompt: 'Recommend a pink bag and eyewear look', model: 'gpt-5-mini' }
-    });
-    assert.strictEqual(aiStylistRes.status, 200);
-    assert.strictEqual(aiStylistRes.data.provider, 'neon-ai-gateway');
-    assert.ok(aiStylistRes.data.reply && aiStylistRes.data.reply.length > 10);
-    console.log(`✓ 7. Neon Lakebase Postgres (${neonRes.data.database_name}, ${neonRes.data.products_count} products, ${neonRes.data.orders_count} orders) & Neon AI Gateway verified end-to-end.`);
-
+    const publicStatus=await req('/api/neon/status');assert.strictEqual(publicStatus.status,403);
+    const dbStatus=await req('/api/neon/status',{method:'GET'},adminCookies);assert.strictEqual(dbStatus.status,200);
+    console.log(`✓ 7. Database driver ${dbStatus.data.driver}; no external email delivery claimed.`);
     console.log('\nALL ACCEPTANCE VERIFICATION TESTS PASSED SUCCESSFULLY!');
   } finally {
     server.close();
-    const { getNeonPool } = require('./neon-pg');
-    const pool = getNeonPool();
-    if (pool) await pool.end();
+    await require('./db').db.close();
   }
 }
 

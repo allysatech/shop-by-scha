@@ -156,7 +156,7 @@ export const state = {
     shipping_method_id: null,
     createdOrder: null
   },
-  adminIncludeDemo: true,
+  adminIncludeDemo: false,
   adminDateFrom: '2026-10-01',
   adminDateTo: '2026-10-31',
   pollingTimer: null
@@ -219,10 +219,12 @@ export async function apiFetch(url, options = {}) {
 }
 
 export async function bootstrapSessionAndStore(isPreview = false) {
-  const [authData, sfData, cartData] = await Promise.all([
-    apiFetch('/api/auth/me'),
-    apiFetch(`/api/storefront${isPreview ? '?preview=1' : ''}`),
-    apiFetch('/api/cart')
+  // Authenticate first. Only /api/cart may initialize the cart cookie.
+  // A competing auth/me Set-Cookie previously replaced the just-populated bag.
+  const authData = await apiFetch('/api/auth/me');
+  state.csrfToken = authData.csrfToken;
+  const [sfData, cartData] = await Promise.all([
+    apiFetch(`/api/storefront${isPreview ? '?preview=1' : ''}`), apiFetch('/api/cart')
   ]);
   state.user = authData.user;
   state.csrfToken = authData.csrfToken;

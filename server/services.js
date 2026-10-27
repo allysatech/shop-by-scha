@@ -27,26 +27,26 @@ function sanitizeCsvCell(val) {
   return str;
 }
 
-function logAudit({ actorUserId = null, actorEmail = 'system', actorRole = 'SYSTEM', action, entityType, entityId, details = {} }) {
-  db.prepare(`
+async function logAudit({ actorUserId = null, actorEmail = 'system', actorRole = 'SYSTEM', action, entityType, entityId, details = {} }) {
+  await db.prepare(`
     INSERT INTO audit_events (actor_user_id, actor_email, actor_role, action, entity_type, entity_id, details_json, created_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `).run(actorUserId, actorEmail, actorRole, action, entityType, String(entityId), JSON.stringify(details), new Date().toISOString());
 }
 
 // Idempotent transactional email scheduling (supports Resend API & local audit queue)
-function scheduleNotification({ orderId, recipientEmail, templateType, idempotencyKey, subject, bodyText, actionUrl }) {
-  const existing = db.prepare('SELECT id, status FROM notification_jobs WHERE idempotency_key = ?').get(idempotencyKey);
+async function scheduleNotification({ orderId, recipientEmail, templateType, idempotencyKey, subject, bodyText, actionUrl }) {
+  const existing = await db.prepare('SELECT id, status FROM notification_jobs WHERE idempotency_key = ?').get(idempotencyKey);
   if (existing) {
     return existing;
   }
   const resendApiKey = String(process.env.RESEND_API_KEY || '').trim();
-  const settings = db.prepare('SELECT smtp_configured FROM store_settings WHERE id = 1').get();
-  const isConfigured = Boolean(resendApiKey || (settings && settings.smtp_configured));
-  const status = isConfigured ? 'sent_logged' : 'pending_smtp';
+  const settings = await db.prepare('SELECT smtp_configured FROM store_settings WHERE id = 1').get();
+  const isConfigured = Boolean(resendApiKey || settings && settings.smtp_configured);
+  const status = 'pending_smtp';
   const lastError = isConfigured ? null : 'Resend / SMTP transport not connected in environment; email logged locally and ready for retry.';
   const now = new Date().toISOString();
-  const res = db.prepare(`
+  const res = await db.prepare(`
     INSERT INTO notification_jobs (
       order_id, recipient_email, template_type, idempotency_key, subject, body_text, action_url,
       status, attempt_count, last_error, created_at, updated_at
@@ -55,31 +55,14 @@ function scheduleNotification({ orderId, recipientEmail, templateType, idempoten
 
   const jobId = Number(res.lastInsertRowid);
 
-  if (resendApiKey && recipientEmail) {
-    try {
-      const { Resend } = require('resend');
-      const resend = new Resend(resendApiKey);
-      resend.emails.send({
-        from: process.env.RESEND_FROM_EMAIL || 'Shop by SCHA <onboarding@resend.dev>',
-        to: [recipientEmail],
-        subject,
-        text: `${bodyText}\n\n${actionUrl ? `Order Link: ${actionUrl}` : ''}`
-      }).catch((err) => {
-        db.prepare('UPDATE notification_jobs SET status = ?, last_error = ?, updated_at = ? WHERE id = ?')
-          .run('failed', String(err.message || err), new Date().toISOString(), jobId);
-      });
-    } catch (_) {
-      // Non-blocking fallback
-    }
-  }
 
   return { id: jobId, status };
 }
 
 // Sweep expired unpaid stock reservations (never releases active_review_hold while buyer awaits review!)
-function sweepExpiredReservations() {
+async function sweepExpiredReservations() {
   const now = new Date().toISOString();
-  const expiredOrders = db.prepare(`
+  const expiredOrders = await db.prepare(`
     SELECT id, order_number, customer_email, payment_status, fulfilment_status
     FROM orders
     WHERE payment_status = 'awaiting_payment'
@@ -90,41 +73,41 @@ function sweepExpiredReservations() {
   if (expiredOrders.length === 0) return 0;
 
   let releasedCount = 0;
-  runTransaction(() => {
+  await runTransaction(async () => {
     for (const ord of expiredOrders) {
       // Double check no payment submission was uploaded
-      const subCount = db.prepare('SELECT COUNT(*) AS c FROM payment_submissions WHERE order_id = ?').get(ord.id).c;
+      const subCount = (await db.prepare('SELECT COUNT(*) AS c FROM payment_submissions WHERE order_id = ?').get(ord.id)).c;
       if (subCount > 0) continue;
 
-      const holds = db.prepare(`
+      const holds = await db.prepare(`
         SELECT id, variant_id, sku, quantity
         FROM stock_reservations
         WHERE order_id = ? AND status = 'active_payment_hold'
       `).all(ord.id);
 
       for (const h of holds) {
-        const v = db.prepare('SELECT id, on_hand, reserved FROM product_variants WHERE id = ?').get(h.variant_id);
+        const v = await db.prepare('SELECT id, on_hand, reserved FROM product_variants WHERE id = ?').get(h.variant_id);
         if (v) {
           const newReserved = Math.max(0, v.reserved - h.quantity);
-          db.prepare('UPDATE product_variants SET reserved = ?, version = version + 1, updated_at = ? WHERE id = ?')
-            .run(newReserved, now, v.id);
-          db.prepare(`
+          await db.prepare('UPDATE product_variants SET reserved = ?, version = version + 1, updated_at = ? WHERE id = ?').
+          run(newReserved, now, v.id);
+          await db.prepare(`
             INSERT INTO stock_movements (
               variant_id, sku, delta_on_hand, delta_reserved, before_on_hand, after_on_hand, before_reserved, after_reserved,
               movement_type, reason, order_id, actor_user_id, actor_email, created_at
             ) VALUES (?, ?, 0, ?, ?, ?, ?, ?, 'reservation_released', 'Unpaid order deadline expired', ?, NULL, 'system', ?)
           `).run(v.id, h.sku, -h.quantity, v.on_hand, v.on_hand, v.reserved, newReserved, ord.id, now);
         }
-        db.prepare(`UPDATE stock_reservations SET status = 'released_expired', updated_at = ? WHERE id = ?`).run(now, h.id);
+        await db.prepare(`UPDATE stock_reservations SET status = 'released_expired', updated_at = ? WHERE id = ?`).run(now, h.id);
       }
 
-      db.prepare(`
+      await db.prepare(`
         UPDATE orders
         SET payment_status = 'expired_cancelled', fulfilment_status = 'cancelled', updated_at = ?
         WHERE id = ?
       `).run(now, ord.id);
 
-      db.prepare(`
+      await db.prepare(`
         INSERT INTO status_events (
           order_id, event_type, payment_status, fulfilment_status, title, detail, actor_role, actor_email, customer_visible, created_at
         ) VALUES (?, 'order_expired', 'expired_cancelled', 'cancelled', 'Payment deadline expired', 'Stock reservation was released because no payment receipt was submitted before the deadline.', 'SYSTEM', 'system', 1, ?)
@@ -136,18 +119,18 @@ function sweepExpiredReservations() {
   return releasedCount;
 }
 
-function getShippingQuote(stateName) {
-  const settings = db.prepare('SELECT shipping_zones_json, tax_config_json FROM store_settings WHERE id = 1').get();
+async function getShippingQuote(stateName) {
+  const settings = await db.prepare('SELECT shipping_zones_json, tax_config_json FROM store_settings WHERE id = 1').get();
   const zones = JSON.parse(settings.shipping_zones_json || '[]');
   const normalizedState = String(stateName || '').trim().toLowerCase();
 
   let matchedZone = zones.find((z) =>
-    (z.states || []).some((s) => s.toLowerCase() === normalizedState)
+  (z.states || []).some((s) => s.toLowerCase() === normalizedState)
   );
   if (!matchedZone && zones.length > 0) {
-    matchedZone = normalizedState.includes('sabah') || normalizedState.includes('sarawak') || normalizedState.includes('labuan')
-      ? zones.find((z) => z.id === 'east-my') || zones[0]
-      : zones[0];
+    matchedZone = normalizedState.includes('sabah') || normalizedState.includes('sarawak') || normalizedState.includes('labuan') ?
+    zones.find((z) => z.id === 'east-my') || zones[0] :
+    zones[0];
   }
 
   if (!matchedZone || !matchedZone.methods || matchedZone.methods.length === 0) {
@@ -165,8 +148,8 @@ function getShippingQuote(stateName) {
   };
 }
 
-function getCartDetails(cartId, stateName = 'Wilayah Persekutuan Kuala Lumpur', selectedMethodId = null) {
-  const items = db.prepare(`
+async function getCartDetails(cartId, stateName = 'Wilayah Persekutuan Kuala Lumpur', selectedMethodId = null) {
+  const items = await db.prepare(`
     SELECT ci.id AS cart_item_id, ci.quantity, ci.product_id, ci.variant_id,
            p.title AS product_title, p.slug AS product_slug, p.brand, p.reference_id,
            p.publish_status, p.purchase_enabled, p.is_demo AS product_is_demo,
@@ -204,7 +187,7 @@ function getCartDetails(cartId, stateName = 'Wilayah Persekutuan Kuala Lumpur', 
     };
   });
 
-  const cartRow = db.prepare('SELECT discount_code FROM carts WHERE id = ?').get(cartId);
+  const cartRow = await db.prepare('SELECT discount_code FROM carts WHERE id = ?').get(cartId);
   let discountMinor = 0;
   let discountCode = cartRow ? cartRow.discount_code : null;
   if (discountCode === 'SCHA10' && subtotalMinor > 0) {
@@ -213,7 +196,7 @@ function getCartDetails(cartId, stateName = 'Wilayah Persekutuan Kuala Lumpur', 
     discountCode = null;
   }
 
-  const shippingQuote = getShippingQuote(stateName);
+  const shippingQuote = await getShippingQuote(stateName);
   const chosenMethod = (shippingQuote.methods || []).find((m) => m.id === selectedMethodId) || shippingQuote.defaultMethod;
   const shippingMinor = enrichedItems.length > 0 && chosenMethod ? Number(chosenMethod.rate_minor) : 0;
   const taxMinor = 0;
@@ -237,7 +220,7 @@ function getCartDetails(cartId, stateName = 'Wilayah Persekutuan Kuala Lumpur', 
     tax_formatted: formatMYR(taxMinor),
     total_minor: totalMinor,
     total_formatted: formatMYR(totalMinor),
-    has_demo_items: hasDemoItems || (chosenMethod && chosenMethod.is_demo),
+    has_demo_items: hasDemoItems || chosenMethod && chosenMethod.is_demo,
     warnings
   };
 }
@@ -261,17 +244,17 @@ const FULFILMENT_STATUS_LABELS = {
   cancelled: 'Cancelled'
 };
 
-function enrichOrder(orderRow, includeAdminFields = false) {
+async function enrichOrder(orderRow, includeAdminFields = false) {
   if (!orderRow) return null;
-  const items = db.prepare('SELECT * FROM order_items WHERE order_id = ? ORDER BY id ASC').all(orderRow.id);
-  const events = db.prepare(`
+  const items = await db.prepare('SELECT * FROM order_items WHERE order_id = ? ORDER BY id ASC').all(orderRow.id);
+  const events = await db.prepare(`
     SELECT * FROM status_events
     WHERE order_id = ? ${includeAdminFields ? '' : 'AND customer_visible = 1'}
     ORDER BY created_at ASC, id ASC
   `).all(orderRow.id);
-  const submissions = db.prepare('SELECT * FROM payment_submissions WHERE order_id = ? ORDER BY id DESC').all(orderRow.id);
-  const shipments = db.prepare('SELECT * FROM shipments WHERE order_id = ? ORDER BY id DESC').all(orderRow.id);
-  const refunds = db.prepare('SELECT * FROM manual_refunds WHERE order_id = ? ORDER BY id DESC').all(orderRow.id);
+  const submissions = await db.prepare('SELECT * FROM payment_submissions WHERE order_id = ? ORDER BY id DESC').all(orderRow.id);
+  const shipments = await db.prepare('SELECT * FROM shipments WHERE order_id = ? ORDER BY id DESC').all(orderRow.id);
+  const refunds = await db.prepare('SELECT * FROM manual_refunds WHERE order_id = ? ORDER BY id DESC').all(orderRow.id);
 
   const result = {
     id: orderRow.id,
@@ -348,9 +331,9 @@ function enrichOrder(orderRow, includeAdminFields = false) {
     result.paid_verified_by_email = orderRow.paid_verified_by_email;
     result.paid_bank_reference = orderRow.paid_bank_reference;
     result.guest_access_token = orderRow.guest_access_token;
-    result.reviews = db.prepare('SELECT * FROM payment_reviews WHERE order_id = ? ORDER BY id DESC').all(orderRow.id);
-    result.notifications = db.prepare('SELECT * FROM notification_jobs WHERE order_id = ? ORDER BY id DESC').all(orderRow.id);
-    result.reservations = db.prepare('SELECT * FROM stock_reservations WHERE order_id = ?').all(orderRow.id);
+    result.reviews = await db.prepare('SELECT * FROM payment_reviews WHERE order_id = ? ORDER BY id DESC').all(orderRow.id);
+    result.notifications = await db.prepare('SELECT * FROM notification_jobs WHERE order_id = ? ORDER BY id DESC').all(orderRow.id);
+    result.reservations = await db.prepare('SELECT * FROM stock_reservations WHERE order_id = ?').all(orderRow.id);
   }
 
   return result;
@@ -364,9 +347,9 @@ function detectCourierFromTracking(rawTracking) {
   const encoded = encodeURIComponent(raw);
 
   if (
-    /^(PL|POS|ER|EN|EP|EE|EH|EM|ES|EF|EB|ED)/.test(compact) ||
-    /^[A-Z]{2}\d{9}MY$/.test(compact)
-  ) {
+  /^(PL|POS|ER|EN|EP|EE|EH|EM|ES|EF|EB|ED)/.test(compact) ||
+  /^[A-Z]{2}\d{9}MY$/.test(compact))
+  {
     return {
       courierName: 'PosLaju Malaysia',
       trackingUrl: `https://tracking.pos.com.my/?trackingNo=${encoded}`
