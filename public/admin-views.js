@@ -1314,7 +1314,7 @@ export function renderAdminSettings(settingsData) {
   const html = `
     <h1 class="page-title" style="font-size:26px;margin-bottom:20px;">Store settings &amp; Merchant QR</h1>
 
-    <div class="checkout-grid" style="margin-bottom:24px;">
+    <div style="margin-bottom:24px;">
       <!-- Merchant DuitNow QR & Recipient Versioning (Slot Q01) -->
       <div class="card-panel">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
@@ -1371,46 +1371,6 @@ export function renderAdminSettings(settingsData) {
           <button type="submit" class="btn-capsule-primary" style="width:100%;">
             Save New Audited QR Instruction Version (v${Number(latestQr.version_number || 1) + 1})
           </button>
-        </form>
-      </div>
-
-      <!-- Identity, Currency & Design Preview Settings -->
-      <div class="card-panel">
-        <h2 style="font-size:18px;font-weight:800;margin:0 0 12px;">Identity, Contact &amp; Store Mode</h2>
-        <form id="admin-general-settings-form">
-          ${[['support_hours','Support hours'],['business_identity','Store identity / registration information'],['founder_story','Founder story'],['sourcing_info','Product sourcing / authenticity evidence']].map(([key,label])=>`<div class="field-group"><label class="field-label" for="setting-${key}">${label}</label><textarea id="setting-${key}" name="${key}" class="textarea-field" rows="2">${escapeHtml(s[key] || '')}</textarea></div>`).join('')}
-          <div class="field-group"><label class="field-label" for="policies-json">Shipping, returns, refund timing and other policies (JSON)</label><textarea id="policies-json" name="policies_json" class="textarea-field" rows="8">${escapeHtml(JSON.stringify(s.policies || {},null,2))}</textarea><small>Each policy uses a key such as shipping or returns, with title and body. Enter merchant-approved facts.</small></div>
-          <div class="field-group"><label class="field-label" for="shipping-json">Shipping coverage and rates (JSON)</label><textarea id="shipping-json" name="shipping_zones_json" class="textarea-field" rows="6">${escapeHtml(JSON.stringify(s.shipping_zones || [],null,2))}</textarea></div>
-
-          <div class="field-group">
-            <label class="field-label">Store Name</label>
-            <input type="text" name="store_name" class="input-field" value="${escapeHtml(s.store_name || 'Shop by SCHA')}" required />
-          </div>
-          <div class="form-grid-2">
-            <div class="field-group">
-              <label class="field-label">Support Email</label>
-              <input type="text" name="support_email" class="input-field" value="${escapeHtml(s.support_email || '')}" />
-            </div>
-            <div class="field-group">
-              <label class="field-label">Support Phone</label>
-              <input type="text" name="support_phone" class="input-field" value="${escapeHtml(s.support_phone || '')}" />
-            </div>
-          </div>
-          <div class="form-grid-2">
-            <div class="field-group">
-              <label class="field-label">Currency</label>
-              <input type="text" name="currency" class="input-field" value="MYR" readonly />
-            </div>
-            <div class="field-group">
-              <label class="field-label">Reporting Timezone</label>
-              <input type="text" name="timezone" class="input-field" value="Asia/Kuala_Lumpur" readonly />
-            </div>
-          </div>
-          <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:16px;cursor:pointer;">
-            <input type="checkbox" name="design_preview_enabled" ${s.design_preview_enabled ? 'checked' : ''} />
-            <span>Show 12 draft catalogue references on storefront with "Price to confirm" (Design Preview Mode)</span>
-          </label>
-          <button type="submit" class="btn-capsule-primary" style="width:100%;">Save settings</button>
         </form>
       </div>
     </div>
