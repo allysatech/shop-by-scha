@@ -2491,3 +2491,30 @@ button, input, select, textarea {
 
 .form-error{padding:14px;background:#F5DDE5;color:#702541;border-radius:12px;margin-bottom:16px;}
 [aria-invalid=true]{border-color:#8D3656;}
+
+.just-scha-hero-card {
+  position: relative;
+  overflow: hidden;
+  padding: clamp(28px, 4vw, 48px);
+  margin-bottom: 28px;
+  background: #FAF6F2 url('/images/just_scha_bg_desktop.png') right center / cover no-repeat;
+}
+.just-scha-hero-copy {
+  max-width: 520px;
+}
+.just-scha-hero-pillars {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(122, 46, 77, 0.14);
+}
+@media (max-width: 768px) {
+  .just-scha-hero-card {
+    background: #FAF6F2 url('/images/just_scha_bg_mobile.png') center center / cover no-repeat;
+  }
+  .just-scha-hero-copy {
+    max-width: 100%;
+  }
+  .just-scha-hero-pillars {
+    margin-top: 240px;
+  }
+}

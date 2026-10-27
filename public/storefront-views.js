@@ -1608,11 +1608,10 @@ export function renderHelpPolicyPage(pageKey = 'about') {
       <div aria-hidden="true" style="position:absolute;inset:0;background:url('/images/about_bg_marble.jpg') center/cover no-repeat;opacity:0.4;pointer-events:none;z-index:0;"></div>
       <main id="main-content" class="page-container" style="max-width:1180px;position:relative;z-index:1;">
         <!-- SECTION 1: ABOUT SHOP BY SCHA -->
-        <section id="help-section-about" class="card-panel" style="position:relative;overflow:hidden;padding:clamp(24px,4vw,44px);margin-bottom:28px;background:#FFFFFF;">
-          <div aria-hidden="true" style="position:absolute;inset:0;background:url('/images/about_bg_marble.jpg') center/cover no-repeat;opacity:0.4;pointer-events:none;z-index:0;"></div>
+        <section id="help-section-about" class="card-panel just-scha-hero-card">
           <div style="position:relative;z-index:1;">
-            <div style="max-width:760px;">
-              <span class="chrome-pill-tag" style="margin-bottom:14px;background:rgba(255,255,255,0.88);">EST. KUALA LUMPUR · CURATED EDIT</span>
+            <div class="just-scha-hero-copy">
+              <span class="chrome-pill-tag" style="margin-bottom:14px;background:rgba(255,255,255,0.92);">EST. KUALA LUMPUR · CURATED EDIT</span>
               <h1 class="page-title" style="font-size:clamp(2rem,4vw,3rem);line-height:1.05;margin:0 0 16px;letter-spacing:-0.03em;">
                 JUST SCHA
               </h1>
@@ -1624,12 +1623,12 @@ export function renderHelpPolicyPage(pageKey = 'about') {
               </p>
               <div style="display:flex;flex-wrap:wrap;gap:12px;">
                 <a href="/shop" data-nav class="btn-capsule-primary" style="min-width:auto;padding:12px 26px;">Explore the Catalogue</a>
-                <a href="/collections" data-nav class="btn-capsule-secondary" style="padding:12px 22px;background:rgba(255,255,255,0.9);">View 4 Collections</a>
+                <a href="/collections" data-nav class="btn-capsule-secondary" style="padding:12px 22px;background:rgba(255,255,255,0.92);">View 4 Collections</a>
               </div>
             </div>
 
             <!-- 3 Brand Pillars -->
-            <div class="form-grid-3" style="margin-top:28px;padding-top:24px;border-top:1px solid rgba(122,46,77,0.14);">
+            <div class="form-grid-3 just-scha-hero-pillars">
               <div style="background:rgba(255,255,255,0.92);backdrop-filter:blur(6px);padding:18px;border-radius:var(--radius-md);border:1px solid var(--border-warm);">
                 <span class="badge badge-ref" style="margin-bottom:8px;">01 · CURATION</span>
                 <h3 style="font-size:15.5px;font-weight:800;margin:0 0 6px;">Authentic &amp; Inspected</h3>
