@@ -858,6 +858,19 @@ document.addEventListener('change', async (e) => {
     return;
   }
 
+  if (e.target.id === 'admin-qr-file-input') {
+    const file = e.target.files && e.target.files[0];
+    const box = document.getElementById('admin-qr-preview-box');
+    const img = document.getElementById('admin-qr-preview-img');
+    const badge = document.getElementById('admin-qr-preview-badge');
+    if (file && box && img) {
+      img.src = URL.createObjectURL(file);
+      box.style.display = 'flex';
+      if (badge) badge.textContent = 'NEW QR SELECTED (CLICK SAVE BELOW)';
+    }
+    return;
+  }
+
   if (e.target.id === 'fulfil-courier-select') {
     const badge = document.getElementById('courier-autodetect-badge');
     const trackingInput = document.getElementById('fulfil-tracking-input');

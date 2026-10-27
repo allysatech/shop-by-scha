@@ -444,7 +444,7 @@ async function seedIfNeeded() {
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
-    const deadlineFuture = new Date('2026-10-27T06:00:00.000Z').toISOString();
+    const deadlineFuture = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
 
     // Order #SCHA-001: Paid / Processing (RM137.00 [demo]) - matches Page 9 & 15
     const guestTok1 = 'demo-guest-token-scha-001-verified';

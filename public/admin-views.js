@@ -1326,6 +1326,20 @@ export function renderAdminSettings(settingsData) {
         </p>
 
         <form id="admin-qr-settings-form">
+          <div id="admin-qr-preview-box" style="display:${latestQr.qr_image_path ? 'flex' : 'none'};align-items:center;gap:16px;padding:14px;margin-bottom:16px;background:var(--bg-offwhite);border:1.5px solid var(--border-warm);border-radius:var(--radius-md);flex-wrap:wrap;">
+            <div style="width:130px;height:130px;background:#fff;border:1px solid var(--border-warm);border-radius:var(--radius-sm);padding:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <img id="admin-qr-preview-img" src="${escapeHtml(latestQr.qr_image_path || '')}" alt="Uploaded Merchant DuitNow QR" style="max-width:100%;max-height:100%;object-fit:contain;display:block;" />
+            </div>
+            <div style="flex:1;min-width:180px;">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">
+                <span class="badge badge-paid" id="admin-qr-preview-badge">ACTIVE BANK QR (v${escapeHtml(latestQr.version_number || 1)})</span>
+              </div>
+              <div style="font-size:14px;font-weight:800;color:var(--charcoal);">${escapeHtml(latestQr.recipient_name || 'SCHA STUDIO SDN BHD')}</div>
+              <div style="font-size:12.5px;color:var(--text-muted);margin-top:2px;">${escapeHtml(latestQr.bank_name || '')}</div>
+              ${latestQr.qr_image_path ? `<a href="${escapeHtml(latestQr.qr_image_path)}" target="_blank" rel="noopener" style="display:inline-block;margin-top:8px;font-size:12px;font-weight:700;color:var(--rose-deep);">View full QR image &nearr;</a>` : ''}
+            </div>
+          </div>
+
           <div class="field-group">
             <label class="field-label">Registered Seller Recipient Display Name</label>
             <input type="text" name="recipient_name" class="input-field" value="${escapeHtml(latestQr.recipient_name || '')}" required />
@@ -1337,7 +1351,7 @@ export function renderAdminSettings(settingsData) {
             </div>
             <div class="field-group">
               <label class="field-label">Upload Bank-Issued Merchant QR (PNG/JPG)</label>
-              <input type="file" name="qr_image" accept="image/png,image/jpeg" class="input-field" />
+              <input type="file" id="admin-qr-file-input" name="qr_image" accept="image/png,image/jpeg" class="input-field" />
             </div>
           </div>
           <div class="form-grid-2">
