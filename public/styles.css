@@ -2499,8 +2499,20 @@ button, input, select, textarea {
   margin-bottom: 28px;
   background: #FAF6F2 url('/images/just_scha_bg_desktop.png') right center / cover no-repeat;
 }
+.just-scha-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.4);
+  pointer-events: none;
+  z-index: 0;
+}
 .just-scha-hero-copy {
-  max-width: 520px;
+  max-width: 540px;
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  padding: 20px 24px;
+  border-radius: var(--radius-md);
 }
 .just-scha-hero-pillars {
   margin-top: 32px;
@@ -2513,6 +2525,7 @@ button, input, select, textarea {
   }
   .just-scha-hero-copy {
     max-width: 100%;
+    padding: 18px 20px;
   }
   .just-scha-hero-pillars {
     margin-top: 240px;

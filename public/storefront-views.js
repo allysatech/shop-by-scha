@@ -1609,6 +1609,7 @@ export function renderHelpPolicyPage(pageKey = 'about') {
       <main id="main-content" class="page-container" style="max-width:1180px;position:relative;z-index:1;">
         <!-- SECTION 1: ABOUT SHOP BY SCHA -->
         <section id="help-section-about" class="card-panel just-scha-hero-card">
+          <div class="just-scha-hero-overlay" aria-hidden="true"></div>
           <div style="position:relative;z-index:1;">
             <div class="just-scha-hero-copy">
               <span class="chrome-pill-tag" style="margin-bottom:14px;background:rgba(255,255,255,0.92);">EST. KUALA LUMPUR · CURATED EDIT</span>
