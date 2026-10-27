@@ -2133,6 +2133,9 @@ button, input, select, textarea {
   .shop-sort-select {
     width: 100%;
   }
+  .shop-filter-sidebar {
+    display: none !important;
+  }
 
   .product-grid,
   .product-grid.cols-3 {
@@ -2348,9 +2351,7 @@ button, input, select, textarea {
   }
 
   .shop-filter-sidebar {
-    grid-template-columns: 1fr 1fr;
-    padding: 14px;
-    gap: 12px;
+    display: none !important;
   }
 
   /* Cart & Order Item Rows stack price neatly on narrow screens */
