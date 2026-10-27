@@ -104,7 +104,7 @@ export function renderStorefrontFooter() {
   const hasRealStores = Array.isArray(stores) && stores.length > 0;
 
   return `
-    <footer class="site-footer">
+    <footer class="site-footer" style="position:relative;z-index:2;background:var(--bg-offwhite);">
       <div class="footer-inner">
         <div class="footer-col footer-brand-col">
           <a href="/" data-nav class="brand-wordmark footer-brand-link">
@@ -1605,7 +1605,7 @@ export function renderHelpPolicyPage(pageKey = 'about') {
   return `
     ${renderStorefrontHeader(`/help/${pageKey}`)}
     <div style="position:relative;overflow:hidden;">
-      <div aria-hidden="true" style="position:fixed;inset:0;background:url('/images/about_bg_marble.jpg') center/cover no-repeat;opacity:0.4;pointer-events:none;z-index:0;"></div>
+      <div aria-hidden="true" style="position:absolute;inset:0;background:url('/images/about_bg_marble.jpg') center/cover no-repeat;opacity:0.4;pointer-events:none;z-index:0;"></div>
       <main id="main-content" class="page-container" style="max-width:1180px;position:relative;z-index:1;">
         <!-- SECTION 1: ABOUT SHOP BY SCHA -->
         <section id="help-section-about" class="card-panel" style="position:relative;overflow:hidden;padding:clamp(24px,4vw,44px);margin-bottom:28px;background:#FFFFFF;">
