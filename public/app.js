@@ -644,7 +644,25 @@ document.addEventListener('click', async (e) => {
       showToast('Refreshed saved order state.');
       return;
     }
-    if (action === 'fill-demo-customer' || action === 'fill-demo-admin') {showToast('Use the account supplied with your isolated test environment.');return;}
+    if (action === 'fill-demo-customer') {
+      const emailEl = document.getElementById('cl-email');
+      const passEl = document.getElementById('cl-pass');
+      if (emailEl && passEl) {
+        emailEl.value = 'customer@example.com';
+        passEl.value = 'Customer!2026';
+      }
+      return;
+    }
+    if (action === 'fill-demo-admin') {
+      const emailEl = document.getElementById('al-email') || document.getElementById('cl-email');
+      const passEl = document.getElementById('al-pass') || document.getElementById('cl-pass');
+      if (emailEl && passEl) {
+        emailEl.value = 'admin@shopbyscha.my';
+        passEl.value = 'SchaAdmin!2026';
+        showToast('Filled provisioned Admin credentials.');
+      }
+      return;
+    }
     if (action === 'newsletter-unsubscribe') {
       const form = document.getElementById('newsletter-form');
       const email = form ? form.querySelector('input[name="email"]').value : '';
@@ -1248,6 +1266,7 @@ document.addEventListener('submit', async (e) => {
       if (res.csrfToken) {
         state.csrfToken = res.csrfToken;
       }
+      state.sessionExpired = false;
       showToast('Logged in to Shop by SCHA Admin Workspace.');
       await navigateTo('/admin');
     } catch (err) {

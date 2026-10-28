@@ -1347,9 +1347,12 @@ export function renderCustomerAuthPage(mode = 'login') {
           </form>
           <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;align-items:center;font-size:13px;padding-top:12px;border-top:1px solid var(--border-warm);">
             <a href="/register" data-nav style="color:var(--rose-deep);font-weight:700;">New customer? Create account</a>
-            ${state.storefront?.sandbox ? `<button type="button" class="nav-btn" data-action="fill-demo-customer" style="font-size:12px;color:var(--text-muted);">
-              Fill Demo Customer
-            </button>` : ''}
+            <div style="display:flex;align-items:center;gap:12px;">
+              <a href="/admin/login" data-nav style="font-size:12px;color:var(--text-muted);font-weight:600;">Admin login &gt;</a>
+              ${state.storefront?.sandbox ? `<button type="button" class="nav-btn" data-action="fill-demo-customer" style="font-size:12px;color:var(--text-muted);">
+                Fill Demo Customer
+              </button>` : ''}
+            </div>
           </div>
         ` : mode === 'register' ? `
           <form id="customer-register-form">

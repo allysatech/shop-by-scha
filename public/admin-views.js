@@ -91,9 +91,9 @@ export function renderAdminLoginPage(mode = 'login', errorMsg = '') {
               <a href="/" data-nav style="color:var(--text-muted);font-weight:600;">Back to storefront &gt;</a>
               <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
                 <span class="badge badge-draft">NO SIGN-UP</span>
-                ${state.storefront?.sandbox ? `<button type="button" class="nav-btn" data-action="fill-demo-admin" style="font-size:12px;color:var(--rose-deep);font-weight:700;">
+                <button type="button" class="nav-btn" data-action="fill-demo-admin" style="font-size:12px;color:var(--rose-deep);font-weight:700;">
                   Fill Provisioned Admin
-                </button>` : ''}
+                </button>
               </div>
             </div>
           `}

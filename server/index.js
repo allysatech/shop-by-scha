@@ -259,7 +259,15 @@ async function handleApiRequest(req, res, urlObj) {
   const { user, session, expired } = await getSessionFromRequest(req);
 
   // Enforce CSRF on state-changing requests when an authenticated session is present
-  if (session && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+  const csrfExemptPaths = new Set([
+    '/api/auth/login',
+    '/api/admin/auth/login',
+    '/api/auth/register',
+    '/api/auth/forgot-password',
+    '/api/admin/auth/forgot-password',
+    '/api/auth/reset-password'
+  ]);
+  if (session && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method) && !csrfExemptPaths.has(pathname)) {
     const headerCsrf = req.headers['x-csrf-token'];
     if (headerCsrf !== session.csrfToken) {
       return sendJson(res, 403, { error: 'Invalid CSRF token.' });
@@ -384,7 +392,8 @@ async function handleApiRequest(req, res, urlObj) {
       return sendJson(res, 401, { error: 'Invalid email or password.' });
     }
 
-    const { sessionId, csrfToken } = await createSession(row.id, 'customer');
+    const isAdminUser = row.role === 'ADMIN';
+    const { sessionId, csrfToken } = await createSession(row.id, isAdminUser ? 'admin' : 'customer', isAdminUser ? 12 : 24);
     const cookies = parseCookies(req.headers.cookie);
     const mergedCartId = await mergeGuestCartIntoUserCart(cookies[CART_COOKIE_NAME], row.id);
 
