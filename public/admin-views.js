@@ -1309,7 +1309,6 @@ export function renderAdminSettings(settingsData) {
   const s = settingsData.settings || {};
   const versions = settingsData.payment_versions || [];
   const latestQr = versions[0] || {};
-  const auditLogs = settingsData.audit_logs || [];
 
   const html = `
     <h1 class="page-title" style="font-size:26px;margin-bottom:20px;">Store settings &amp; Merchant QR</h1>
@@ -1372,29 +1371,6 @@ export function renderAdminSettings(settingsData) {
             Save New Audited QR Instruction Version (v${Number(latestQr.version_number || 1) + 1})
           </button>
         </form>
-      </div>
-    </div>
-
-    <!-- Audit Log -->
-    <div class="card-panel">
-      <h2 style="font-size:17px;font-weight:800;margin:0 0 12px;">Recent Admin Audit Trail</h2>
-      <div class="table-scroll">
-        <table class="data-table">
-          <thead>
-            <tr><th>TIME</th><th>ACTOR</th><th>ACTION</th><th>ENTITY</th><th>DETAILS</th></tr>
-          </thead>
-          <tbody>
-            ${auditLogs.map((a) => `
-              <tr>
-                <td>${escapeHtml(formatKLDate(a.created_at))}</td>
-                <td>${escapeHtml(a.actor_email)} (${escapeHtml(a.actor_role)})</td>
-                <td><strong>${escapeHtml(a.action)}</strong></td>
-                <td>${escapeHtml(a.entity_type)} #${escapeHtml(a.entity_id)}</td>
-                <td style="font-size:12px;color:var(--text-muted);">${escapeHtml(a.details_json)}</td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
       </div>
     </div>
   `;
